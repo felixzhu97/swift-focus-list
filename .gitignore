@@ -3,3 +3,10 @@
 .kiro
 
 .swiftpm
+
+#  Xcode
+.DS_Store
+
+# IDEA
+.vscode
+.idea
