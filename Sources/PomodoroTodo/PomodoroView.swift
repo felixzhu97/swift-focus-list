@@ -41,6 +41,9 @@ struct PomodoroView: View {
     // Track previous progress for milestone announcements
     @State private var previousProgress: Double = 0.0
     
+    // Track last announced time for VoiceOver time updates
+    @State private var lastAnnouncedTime: Int = 0
+    
     // Button state tracking for enhanced visual feedback
     @State private var playButtonPressed: Bool = false
     @State private var stopButtonPressed: Bool = false
@@ -137,14 +140,19 @@ struct PomodoroView: View {
                             .animation(.easeInOut(duration: 0.8), value: timer.progress)
                             .animation(.easeInOut(duration: 0.5), value: timer.isBreakTime)
                         
-                        // Timer display text
+                        // Enhanced timer display text with accessibility features
                         Text(timer.formattedTime)
-                            .font(ThemeManager.Typography.timerDisplay)
-                            .foregroundColor(ThemeManager.TextColors.primary)
+                            .font(accessibilityManager.scaledTimerFont())
+                            .foregroundColor(accessibilityManager.highContrastTimerTextColor())
                             .monospacedDigit()
+                            .kerning(accessibilityManager.scaledKerning())
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                             .accessibilityLabel(timerAccessibilityLabel)
                             .accessibilityValue(timerAccessibilityValue)
+                            .accessibilityAddTraits(.updatesFrequently)
                             .scaleEffect(min(size / timerCircleSize, 1.0))
+                            .animation(.easeInOut(duration: 0.2), value: timer.formattedTime)
                     }
                     .frame(width: size, height: size)
                     .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
@@ -157,6 +165,14 @@ struct PomodoroView: View {
                 .onChange(of: timer.progress) { newValue in
                     // Announce progress at key milestones (25%, 50%, 75%)
                     announceProgressIfNeeded(newProgress: newValue)
+                }
+                .onChange(of: timer.timeRemaining) { newTime in
+                    // Announce time updates for VoiceOver users at appropriate intervals
+                    accessibilityManager.announceTimeUpdateIfNeeded(
+                        timeRemaining: newTime,
+                        isBreakTime: timer.isBreakTime,
+                        lastAnnouncedTime: &lastAnnouncedTime
+                    )
                 }
                 
                 // 控制按钮 - Enhanced with native button styling and comprehensive state management

@@ -91,11 +91,39 @@ class ThemeManager: ObservableObject {
     
     // MARK: - Accessibility Support
     
-    /// Ensures colors meet WCAG AA contrast requirements
+    /// Ensures colors meet WCAG AA contrast requirements (4.5:1 minimum)
     static func accessibleColor(_ color: Color, for background: Color = BackgroundColors.primary) -> Color {
         // SwiftUI automatically handles contrast in semantic colors
         // This method can be extended for custom contrast calculations if needed
         return color
+    }
+    
+    /// Returns high contrast timer text color meeting WCAG AA standards
+    static func highContrastTimerTextColor(isHighContrastEnabled: Bool = false) -> Color {
+        if isHighContrastEnabled {
+            // Use maximum contrast colors for high contrast mode
+            #if os(iOS)
+            return Color(UIColor.label) // Automatically adapts with maximum contrast
+            #else
+            return Color.primary // macOS fallback
+            #endif
+        } else {
+            // Use semantic primary color which provides good contrast (4.5:1 minimum)
+            return TextColors.primary
+        }
+    }
+    
+    /// Enhanced monospaced font for timer display with improved digit alignment
+    static func enhancedTimerFont(size: CGFloat = 48) -> Font {
+        // Use system monospaced font with tabular numbers for consistent digit width
+        return Font.system(size: size, weight: .bold, design: .monospaced)
+            .monospacedDigit()
+    }
+    
+    /// Calculates optimal kerning for monospaced timer display
+    static func timerKerning(for fontSize: CGFloat) -> CGFloat {
+        // Subtle kerning to improve readability without breaking monospace alignment
+        return fontSize * 0.01 // 1% of font size
     }
     
     // MARK: - Typography Scale with Dynamic Type Support

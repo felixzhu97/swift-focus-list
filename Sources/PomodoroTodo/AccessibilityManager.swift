@@ -249,6 +249,86 @@ class AccessibilityManager: ObservableObject {
         return max(baseSize, baseSize * scaleFactor)
     }
     
+    // MARK: - Enhanced Timer Display Support
+    
+    /// Returns a scaled monospaced font for timer display with proper Dynamic Type support
+    func scaledTimerFont() -> Font {
+        let baseSize: CGFloat = 48
+        let scaledSize = scaledFontSize(baseSize: baseSize)
+        
+        // Ensure minimum readability while maintaining monospace alignment
+        let clampedSize = max(24, min(scaledSize, 72))
+        
+        return Font.system(size: clampedSize, weight: .bold, design: .monospaced)
+    }
+    
+    /// Returns high contrast timer text color meeting WCAG AA standards
+    func highContrastTimerTextColor() -> Color {
+        if isHighContrastEnabled {
+            // Use maximum contrast colors for high contrast mode
+            #if canImport(UIKit)
+            return Color(UIColor.label) // Automatically adapts to light/dark mode with maximum contrast
+            #else
+            return Color.primary // macOS fallback
+            #endif
+        } else {
+            // Use semantic primary color which automatically provides good contrast
+            return ThemeManager.TextColors.primary
+        }
+    }
+    
+    /// Returns scaled kerning for monospaced timer display to improve digit alignment
+    func scaledKerning() -> CGFloat {
+        let baseKerning: CGFloat = 0.5
+        let scaleFactor = dynamicTypeScaleFactor()
+        
+        // Scale kerning proportionally but keep it subtle
+        return baseKerning * min(scaleFactor, 1.5)
+    }
+    
+    /// Announces time updates for VoiceOver users at appropriate intervals
+    func announceTimeUpdateIfNeeded(timeRemaining: Int, isBreakTime: Bool, lastAnnouncedTime: inout Int) {
+        guard isVoiceOverEnabled else { return }
+        
+        let minutes = timeRemaining / 60
+        let seconds = timeRemaining % 60
+        let totalSeconds = timeRemaining
+        
+        // Announce at specific intervals to avoid overwhelming the user
+        let shouldAnnounce: Bool = {
+            // Announce every minute for the first 5 minutes
+            if totalSeconds <= 300 && totalSeconds % 60 == 0 && totalSeconds != lastAnnouncedTime {
+                return true
+            }
+            // Announce every 5 minutes for longer periods
+            if totalSeconds > 300 && totalSeconds % 300 == 0 && totalSeconds != lastAnnouncedTime {
+                return true
+            }
+            // Announce final countdown (last 10 seconds)
+            if totalSeconds <= 10 && totalSeconds != lastAnnouncedTime {
+                return true
+            }
+            return false
+        }()
+        
+        if shouldAnnounce {
+            let stateText = isBreakTime ? "休息时间" : "工作时间"
+            let timeText: String
+            
+            if totalSeconds <= 10 {
+                timeText = "\(totalSeconds) 秒"
+            } else if minutes > 0 {
+                timeText = seconds > 0 ? "\(minutes) 分 \(seconds) 秒" : "\(minutes) 分"
+            } else {
+                timeText = "\(seconds) 秒"
+            }
+            
+            let announcement = "\(stateText)剩余 \(timeText)"
+            announceStateChange(announcement)
+            lastAnnouncedTime = timeRemaining
+        }
+    }
+    
     // MARK: - Haptic Feedback Coordination
     
     /// Triggers haptic feedback for various user interactions
