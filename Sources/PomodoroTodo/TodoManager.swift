@@ -75,23 +75,25 @@ struct TodoListView: View {
     @State private var selectedPriority: TodoItem.Priority = .medium
     @State private var showingAddTodo = false
     @State private var editingTodo: TodoItem?
+    @ScaledMetric private var screenPadding: CGFloat = 16
     
     var body: some View {
         NavigationView {
-            VStack {
+            VStack(spacing: 0) {
                 // 添加新任务
-                HStack {
+                HStack(spacing: ThemeManager.Spacing.small) {
                     TextField("添加新任务...", text: $newTodoTitle)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .font(ThemeManager.Typography.body)
                     
                     Button(action: addTodo) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.title2)
+                            .font(ThemeManager.Typography.sectionTitle)
                             .foregroundColor(ThemeManager.SystemColors.info)
                     }
                     .disabled(newTodoTitle.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                .padding()
+                .padding(screenPadding)
                 
                 // 任务列表
                 List {
@@ -134,33 +136,39 @@ struct TodoRowView: View {
     let onToggle: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
+    @ScaledMetric private var rowVerticalPadding: CGFloat = 4
+    @ScaledMetric private var priorityHorizontalPadding: CGFloat = 8
+    @ScaledMetric private var priorityVerticalPadding: CGFloat = 2
+    @ScaledMetric private var priorityCornerRadius: CGFloat = 8
+    @ScaledMetric private var contentSpacing: CGFloat = 4
     
     var body: some View {
-        HStack {
+        HStack(spacing: ThemeManager.Spacing.small) {
             Button(action: onToggle) {
                 Image(systemName: todo.isCompleted ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(todo.isCompleted ? ThemeManager.SystemColors.success : ThemeManager.SystemColors.neutral)
-                    .font(.title2)
+                    .font(ThemeManager.Typography.sectionTitle)
             }
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: contentSpacing) {
                 Text(todo.title)
+                    .font(ThemeManager.Typography.headline)
                     .strikethrough(todo.isCompleted)
                     .foregroundColor(todo.isCompleted ? ThemeManager.TextColors.secondary : ThemeManager.TextColors.primary)
                 
-                HStack {
+                HStack(spacing: ThemeManager.Spacing.small) {
                     Text(todo.priority.rawValue)
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
+                        .font(ThemeManager.Typography.caption)
+                        .padding(.horizontal, priorityHorizontalPadding)
+                        .padding(.vertical, priorityVerticalPadding)
                         .background(todo.priority.color.opacity(0.2))
                         .foregroundColor(todo.priority.color)
-                        .cornerRadius(8)
+                        .cornerRadius(priorityCornerRadius)
                     
                     Spacer()
                     
                     Text(todo.createdAt, style: .date)
-                        .font(.caption)
+                        .font(ThemeManager.Typography.caption)
                         .foregroundColor(ThemeManager.TextColors.secondary)
                 }
             }
@@ -172,10 +180,11 @@ struct TodoRowView: View {
                 Button("删除", role: .destructive, action: onDelete)
             } label: {
                 Image(systemName: "ellipsis")
+                    .font(ThemeManager.Typography.body)
                     .foregroundColor(ThemeManager.SystemColors.neutral)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, rowVerticalPadding)
     }
 }
 
@@ -198,17 +207,26 @@ struct EditTodoView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("任务内容") {
+                Section {
                     TextField("任务标题", text: $title)
+                        .font(ThemeManager.Typography.body)
+                } header: {
+                    Text("任务内容")
+                        .font(ThemeManager.Typography.caption)
                 }
                 
-                Section("优先级") {
+                Section {
                     Picker("优先级", selection: $priority) {
                         ForEach(TodoItem.Priority.allCases, id: \.self) { priority in
-                            Text(priority.rawValue).tag(priority)
+                            Text(priority.rawValue)
+                                .font(ThemeManager.Typography.body)
+                                .tag(priority)
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
+                } header: {
+                    Text("优先级")
+                        .font(ThemeManager.Typography.caption)
                 }
             }
             .navigationTitle("编辑任务")
@@ -217,6 +235,7 @@ struct EditTodoView: View {
                     Button("取消") {
                         isPresented = false
                     }
+                    .font(ThemeManager.Typography.button)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -224,6 +243,7 @@ struct EditTodoView: View {
                         todoManager.updateTodo(todo, title: title, priority: priority)
                         isPresented = false
                     }
+                    .font(ThemeManager.Typography.button)
                     .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }

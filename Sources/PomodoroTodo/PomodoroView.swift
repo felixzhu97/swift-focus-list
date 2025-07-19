@@ -2,19 +2,23 @@ import SwiftUI
 
 struct PomodoroView: View {
     @ObservedObject var timer: PomodoroTimer
+    @ScaledMetric private var timerCircleSize: CGFloat = 250
+    @ScaledMetric private var buttonSize: CGFloat = 60
+    @ScaledMetric private var buttonSpacing: CGFloat = 20
+    @ScaledMetric private var sectionSpacing: CGFloat = 30
+    @ScaledMetric private var screenPadding: CGFloat = 16
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 30) {
+            VStack(spacing: sectionSpacing) {
                 // 会话信息
-                VStack {
+                VStack(spacing: ThemeManager.Spacing.small) {
                     Text("第 \(timer.currentSession) 个番茄")
-                        .font(.headline)
+                        .font(ThemeManager.Typography.headline)
                         .foregroundColor(ThemeManager.TextColors.secondary)
                     
                     Text(timer.isBreakTime ? "休息时间" : "专注时间")
-                        .font(.title2)
-                        .fontWeight(.semibold)
+                        .font(ThemeManager.Typography.sectionTitle)
                         .foregroundColor(ThemeManager.timerColor(isBreakTime: timer.isBreakTime))
                 }
                 
@@ -22,7 +26,7 @@ struct PomodoroView: View {
                 ZStack {
                     Circle()
                         .stroke(ThemeManager.TimerColors.progressTrack, lineWidth: 8)
-                        .frame(width: 250, height: 250)
+                        .frame(width: timerCircleSize, height: timerCircleSize)
                     
                     Circle()
                         .trim(from: 0, to: timer.progress)
@@ -30,17 +34,18 @@ struct PomodoroView: View {
                             ThemeManager.timerColor(isBreakTime: timer.isBreakTime, isRunning: timer.isRunning),
                             style: StrokeStyle(lineWidth: 8, lineCap: .round)
                         )
-                        .frame(width: 250, height: 250)
+                        .frame(width: timerCircleSize, height: timerCircleSize)
                         .rotationEffect(.degrees(-90))
                         .animation(.easeInOut(duration: 1), value: timer.progress)
                     
                     Text(timer.formattedTime)
-                        .font(.system(size: 48, weight: .bold, design: .monospaced))
+                        .font(ThemeManager.Typography.timerDisplay)
                         .foregroundColor(ThemeManager.TextColors.primary)
+                        .monospacedDigit()
                 }
                 
                 // 控制按钮
-                HStack(spacing: 20) {
+                HStack(spacing: buttonSpacing) {
                     Button(action: {
                         if timer.isRunning {
                             timer.pauseTimer()
@@ -51,7 +56,7 @@ struct PomodoroView: View {
                         Image(systemName: timer.isRunning ? "pause.fill" : "play.fill")
                             .font(.title)
                             .foregroundColor(.white)
-                            .frame(width: 60, height: 60)
+                            .frame(width: buttonSize, height: buttonSize)
                             .background(ThemeManager.timerButtonColor(isBreakTime: timer.isBreakTime))
                             .clipShape(Circle())
                     }
@@ -62,7 +67,7 @@ struct PomodoroView: View {
                         Image(systemName: "stop.fill")
                             .font(.title)
                             .foregroundColor(.white)
-                            .frame(width: 60, height: 60)
+                            .frame(width: buttonSize, height: buttonSize)
                             .background(ThemeManager.SystemColors.neutral)
                             .clipShape(Circle())
                     }
@@ -70,7 +75,7 @@ struct PomodoroView: View {
                 
                 Spacer()
             }
-            .padding()
+            .padding(screenPadding)
             .navigationTitle("番茄钟")
         }
     }
