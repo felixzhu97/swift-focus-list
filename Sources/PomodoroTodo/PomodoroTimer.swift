@@ -12,6 +12,9 @@ class PomodoroTimer: ObservableObject {
     private let shortBreakDuration = 5 * 60 // 5分钟短休息
     private let longBreakDuration = 15 * 60 // 15分钟长休息
     
+    // Accessibility manager for announcements
+    weak var accessibilityManager: AccessibilityManager?
+    
     var formattedTime: String {
         let minutes = timeRemaining / 60
         let seconds = timeRemaining % 60
@@ -54,15 +57,34 @@ class PomodoroTimer: ObservableObject {
     private func completeSession() {
         pauseTimer()
         
+        // Trigger completion haptic feedback on main actor
+        Task { @MainActor in
+            accessibilityManager?.triggerHapticFeedback(for: .timerComplete)
+        }
+        
         if isBreakTime {
             // 休息结束，开始工作
             isBreakTime = false
             timeRemaining = workDuration
             currentSession += 1
+            
+            // Announce break completion and new work session
+            let sessionText = "休息结束，开始第 \(currentSession) 个工作番茄"
+            Task { @MainActor in
+                accessibilityManager?.announceStateChange(sessionText)
+            }
         } else {
             // 工作结束，开始休息
             isBreakTime = true
-            timeRemaining = currentSession % 4 == 0 ? longBreakDuration : shortBreakDuration
+            let isLongBreak = currentSession % 4 == 0
+            timeRemaining = isLongBreak ? longBreakDuration : shortBreakDuration
+            
+            // Announce work completion and break type
+            let breakType = isLongBreak ? "长休息" : "短休息"
+            let sessionText = "第 \(currentSession) 个工作番茄完成，开始 \(breakType)"
+            Task { @MainActor in
+                accessibilityManager?.announceStateChange(sessionText)
+            }
         }
     }
 }
