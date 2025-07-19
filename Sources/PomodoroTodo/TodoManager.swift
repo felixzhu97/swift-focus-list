@@ -1,6 +1,15 @@
 import SwiftUI
 import Foundation
 
+// MARK: - View Extensions for Conditional Modifiers
+
+extension View {
+    /// Applies a transformation to the view conditionally
+    func apply<T: View>(@ViewBuilder _ transform: (Self) -> T) -> T {
+        transform(self)
+    }
+}
+
 struct TodoItem: Identifiable, Codable {
     var id = UUID()
     var title: String
@@ -78,6 +87,23 @@ struct TodoListView: View {
     @State private var editingTodo: TodoItem?
     @ScaledMetric private var screenPadding: CGFloat = ThemeManager.Spacing.screenMargin
     
+    // Computed properties for organizing todos
+    private var activeTodos: [TodoItem] {
+        todoManager.todos.filter { !$0.isCompleted }
+            .sorted { todo1, todo2 in
+                // Sort by priority first (high -> medium -> low), then by creation date
+                if todo1.priority != todo2.priority {
+                    return todo1.priority.rawValue < todo2.priority.rawValue
+                }
+                return todo1.createdAt < todo2.createdAt
+            }
+    }
+    
+    private var completedTodos: [TodoItem] {
+        todoManager.todos.filter { $0.isCompleted }
+            .sorted { $0.createdAt > $1.createdAt } // Most recently completed first
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -109,41 +135,179 @@ struct TodoListView: View {
                 
                 // 任务列表
                 if todoManager.todos.isEmpty {
+                    // Enhanced empty state with helpful guidance
                     VStack(spacing: ThemeManager.Spacing.medium) {
                         Image(systemName: "checklist")
-                            .font(.system(size: 48))
+                            .font(.system(size: 64))
                             .foregroundColor(ThemeManager.SystemColors.neutral)
                         
-                        Text("还没有任务")
-                            .font(ThemeManager.Typography.headline)
-                            .foregroundColor(ThemeManager.TextColors.secondary)
+                        Text("开始您的高效之旅")
+                            .font(ThemeManager.Typography.sectionTitle)
+                            .foregroundColor(ThemeManager.TextColors.primary)
                         
-                        Text("在上方输入框中添加您的第一个任务")
-                            .font(ThemeManager.Typography.body)
-                            .foregroundColor(ThemeManager.TextColors.secondary)
-                            .multilineTextAlignment(.center)
+                        VStack(spacing: ThemeManager.Spacing.small) {
+                            Text("还没有任务？没关系！")
+                                .font(ThemeManager.Typography.headline)
+                                .foregroundColor(ThemeManager.TextColors.secondary)
+                            
+                            Text("在上方输入框中添加您的第一个任务，开始使用番茄工作法提高效率")
+                                .font(ThemeManager.Typography.body)
+                                .foregroundColor(ThemeManager.TextColors.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, ThemeManager.Spacing.medium)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: ThemeManager.Spacing.small) {
+                            HStack {
+                                Image(systemName: "arrow.left")
+                                    .foregroundColor(ThemeManager.SystemColors.info)
+                                Text("向左滑动完成任务")
+                                    .font(ThemeManager.Typography.caption)
+                                    .foregroundColor(ThemeManager.TextColors.secondary)
+                            }
+                            
+                            HStack {
+                                Image(systemName: "arrow.right")
+                                    .foregroundColor(ThemeManager.SystemColors.warning)
+                                Text("向右滑动编辑或删除")
+                                    .font(ThemeManager.Typography.caption)
+                                    .foregroundColor(ThemeManager.TextColors.secondary)
+                            }
+                            
+                            HStack {
+                                Image(systemName: "arrow.down")
+                                    .foregroundColor(ThemeManager.SystemColors.neutral)
+                                Text("下拉刷新列表")
+                                    .font(ThemeManager.Typography.caption)
+                                    .foregroundColor(ThemeManager.TextColors.secondary)
+                            }
+                        }
+                        .padding(.top, ThemeManager.Spacing.medium)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("任务列表为空")
-                    .accessibilityHint("使用上方的输入框添加您的第一个任务")
+                    .accessibilityLabel("任务列表为空，开始您的高效之旅")
+                    .accessibilityHint("使用上方的输入框添加您的第一个任务，支持滑动手势操作和下拉刷新")
                 } else {
                     List {
-                        ForEach(todoManager.todos.sorted(by: { !$0.isCompleted && $1.isCompleted })) { todo in
-                            TodoRowView(
-                                todo: todo,
-                                onToggle: { todoManager.toggleTodo(todo) },
-                                onEdit: { editingTodo = todo },
-                                onDelete: { todoManager.deleteTodo(todo) },
-                                accessibilityManager: accessibilityManager
-                            )
+                        // Active tasks section
+                        if !activeTodos.isEmpty {
+                            Section {
+                                ForEach(activeTodos) { todo in
+                                    TodoRowView(
+                                        todo: todo,
+                                        onToggle: { todoManager.toggleTodo(todo) },
+                                        onEdit: { editingTodo = todo },
+                                        onDelete: { todoManager.deleteTodo(todo) },
+                                        accessibilityManager: accessibilityManager
+                                    )
+                                    .swipeActions(edge: .leading) {
+                                        Button {
+                                            accessibilityManager.triggerHapticFeedback(for: .todoComplete)
+                                            todoManager.toggleTodo(todo)
+                                            accessibilityManager.announceStateChange("任务已完成")
+                                        } label: {
+                                            Label("完成", systemImage: "checkmark")
+                                        }
+                                        .tint(.green)
+                                        .accessibilityLabel("完成任务")
+                                        .accessibilityHint("标记任务为已完成")
+                                    }
+                                    .swipeActions(edge: .trailing) {
+                                        Button(role: .destructive) {
+                                            accessibilityManager.triggerHapticFeedback(for: .error)
+                                            todoManager.deleteTodo(todo)
+                                            accessibilityManager.announceStateChange("任务已删除")
+                                        } label: {
+                                            Label("删除", systemImage: "trash")
+                                        }
+                                        .accessibilityLabel("删除任务")
+                                        .accessibilityHint("永久删除此任务")
+                                        
+                                        Button {
+                                            editingTodo = todo
+                                            accessibilityManager.announceStateChange("打开编辑界面")
+                                        } label: {
+                                            Label("编辑", systemImage: "pencil")
+                                        }
+                                        .tint(.blue)
+                                        .accessibilityLabel("编辑任务")
+                                        .accessibilityHint("编辑任务标题和优先级")
+                                    }
+                                }
+                            } header: {
+                                Text("待完成 (\(activeTodos.count))")
+                                    .headerProminence(.increased)
+                                    .accessibilityLabel("待完成任务，共\(activeTodos.count)个")
+                            }
+                        }
+                        
+                        // Completed tasks section
+                        if !completedTodos.isEmpty {
+                            Section {
+                                ForEach(completedTodos) { todo in
+                                    TodoRowView(
+                                        todo: todo,
+                                        onToggle: { todoManager.toggleTodo(todo) },
+                                        onEdit: { editingTodo = todo },
+                                        onDelete: { todoManager.deleteTodo(todo) },
+                                        accessibilityManager: accessibilityManager
+                                    )
+                                    .swipeActions(edge: .leading) {
+                                        Button {
+                                            accessibilityManager.triggerHapticFeedback(for: .todoComplete)
+                                            todoManager.toggleTodo(todo)
+                                            accessibilityManager.announceStateChange("任务已标记为未完成")
+                                        } label: {
+                                            Label("未完成", systemImage: "arrow.uturn.backward")
+                                        }
+                                        .tint(.orange)
+                                        .accessibilityLabel("标记为未完成")
+                                        .accessibilityHint("将已完成任务标记为未完成")
+                                    }
+                                    .swipeActions(edge: .trailing) {
+                                        Button(role: .destructive) {
+                                            accessibilityManager.triggerHapticFeedback(for: .error)
+                                            todoManager.deleteTodo(todo)
+                                            accessibilityManager.announceStateChange("任务已删除")
+                                        } label: {
+                                            Label("删除", systemImage: "trash")
+                                        }
+                                        .accessibilityLabel("删除任务")
+                                        .accessibilityHint("永久删除此任务")
+                                        
+                                        Button {
+                                            editingTodo = todo
+                                            accessibilityManager.announceStateChange("打开编辑界面")
+                                        } label: {
+                                            Label("编辑", systemImage: "pencil")
+                                        }
+                                        .tint(.blue)
+                                        .accessibilityLabel("编辑任务")
+                                        .accessibilityHint("编辑任务标题和优先级")
+                                    }
+                                }
+                            } header: {
+                                Text("已完成 (\(completedTodos.count))")
+                                    .headerProminence(.increased)
+                                    .accessibilityLabel("已完成任务，共\(completedTodos.count)个")
+                            }
                         }
                     }
-                    .listStyle(PlainListStyle())
+                    .apply { list in
+                        #if os(iOS)
+                        list.listStyle(.insetGrouped)
+                        #else
+                        list.listStyle(.sidebar)
+                        #endif
+                    }
                     .accessibilityLabel("待办事项列表")
-                    .accessibilityHint("包含 \(todoManager.todos.count) 个任务，\(todoManager.todos.filter { !$0.isCompleted }.count) 个未完成")
+                    .accessibilityHint("包含 \(todoManager.todos.count) 个任务，\(activeTodos.count) 个未完成，支持滑动操作")
                     .refreshable {
-                        // Add pull-to-refresh accessibility announcement
+                        // Enhanced pull-to-refresh with haptic feedback
+                        accessibilityManager.triggerHapticFeedback(for: .buttonTap)
+                        // Simulate refresh delay for better UX
+                        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
                         accessibilityManager.announceStateChange("列表已刷新")
                     }
                 }
@@ -295,7 +459,41 @@ struct EditTodoView: View {
     }
     
     var body: some View {
-        NavigationView {
+        VStack(spacing: 0) {
+            // Custom navigation bar
+            HStack {
+                Button("取消") {
+                    accessibilityManager.triggerHapticFeedback(for: .buttonTap)
+                    isPresented = false
+                    accessibilityManager.announceStateChange("已取消编辑")
+                }
+                .font(ThemeManager.Typography.button)
+                .accessibilityLabel("取消编辑")
+                .accessibilityHint("双击取消编辑并关闭界面")
+                
+                Spacer()
+                
+                Text("编辑任务")
+                    .font(ThemeManager.Typography.headline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Button("保存") {
+                    accessibilityManager.triggerHapticFeedback(for: .success)
+                    todoManager.updateTodo(todo, title: title, priority: priority)
+                    isPresented = false
+                    accessibilityManager.announceStateChange("任务已保存")
+                }
+                .font(ThemeManager.Typography.button)
+                .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                .accessibilityLabel("保存任务")
+                .accessibilityHint("双击保存修改并关闭界面")
+            }
+            .padding()
+            .background(ThemeManager.BackgroundColors.secondary)
+            
+            // Form content
             Form {
                 Section {
                     TextField("任务标题", text: $title)
@@ -328,33 +526,14 @@ struct EditTodoView: View {
                         .accessibilityLabel("优先级设置部分")
                 }
             }
-            .navigationTitle("编辑任务")
-            .accessibilityLabel("编辑任务表单")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
-                        accessibilityManager.triggerHapticFeedback(for: .buttonTap)
-                        isPresented = false
-                        accessibilityManager.announceStateChange("已取消编辑")
-                    }
-                    .font(ThemeManager.Typography.button)
-                    .accessibilityLabel("取消编辑")
-                    .accessibilityHint("双击取消编辑并关闭界面")
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        accessibilityManager.triggerHapticFeedback(for: .success)
-                        todoManager.updateTodo(todo, title: title, priority: priority)
-                        isPresented = false
-                        accessibilityManager.announceStateChange("任务已保存")
-                    }
-                    .font(ThemeManager.Typography.button)
-                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
-                    .accessibilityLabel("保存任务")
-                    .accessibilityHint("双击保存修改并关闭界面")
+            .apply { form in
+                if #available(iOS 16.0, macOS 13.0, *) {
+                    form.formStyle(.grouped)
+                } else {
+                    form
                 }
             }
         }
+        .accessibilityLabel("编辑任务表单")
     }
 }
