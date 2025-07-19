@@ -2,9 +2,9 @@ import SwiftUI
 
 /// Test view to demonstrate typography scaling with Dynamic Type
 struct TypographyTestView: View {
-    @ScaledMetric private var timerCircleSize: CGFloat = 250
-    @ScaledMetric private var buttonSize: CGFloat = 60
-    @ScaledMetric private var spacing: CGFloat = 16
+    @ScaledMetric private var timerCircleSize: CGFloat = ThemeManager.Spacing.timerCircleSize
+    @ScaledMetric private var buttonSize: CGFloat = ThemeManager.Spacing.buttonSize
+    @ScaledMetric private var spacing: CGFloat = ThemeManager.Spacing.medium
     
     var body: some View {
         ScrollView {
@@ -110,11 +110,11 @@ struct TypographyTestView: View {
                         .font(ThemeManager.Typography.caption)
                         .foregroundColor(ThemeManager.TextColors.secondary)
                 }
-                .padding()
+                .padding(ThemeManager.Spacing.medium)
                 .background(ThemeManager.BackgroundColors.secondary)
-                .cornerRadius(12)
+                .cornerRadius(ThemeManager.Spacing.listItem)
             }
-            .padding()
+            .padding(ThemeManager.Spacing.screenMargin)
         }
         .navigationTitle("Typography Test")
     }

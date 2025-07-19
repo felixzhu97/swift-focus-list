@@ -170,8 +170,8 @@ class ThemeManager: ObservableObject {
         /// Component padding (8pt) - use @ScaledMetric in views for Dynamic Type scaling
         static let componentPadding: CGFloat = 8
         
-        /// Button spacing (20pt) - use @ScaledMetric in views for Dynamic Type scaling
-        static let buttonSpacing: CGFloat = 20
+        /// Button spacing (16pt) - use @ScaledMetric in views for Dynamic Type scaling
+        static let buttonSpacing: CGFloat = 16
         
         /// Timer circle size (250pt) - use @ScaledMetric in views for Dynamic Type scaling
         static let timerCircleSize: CGFloat = 250

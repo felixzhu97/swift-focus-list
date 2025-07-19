@@ -75,7 +75,7 @@ struct TodoListView: View {
     @State private var selectedPriority: TodoItem.Priority = .medium
     @State private var showingAddTodo = false
     @State private var editingTodo: TodoItem?
-    @ScaledMetric private var screenPadding: CGFloat = 16
+    @ScaledMetric private var screenPadding: CGFloat = ThemeManager.Spacing.screenMargin
     
     var body: some View {
         NavigationView {
@@ -136,11 +136,11 @@ struct TodoRowView: View {
     let onToggle: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
-    @ScaledMetric private var rowVerticalPadding: CGFloat = 4
-    @ScaledMetric private var priorityHorizontalPadding: CGFloat = 8
-    @ScaledMetric private var priorityVerticalPadding: CGFloat = 2
-    @ScaledMetric private var priorityCornerRadius: CGFloat = 8
-    @ScaledMetric private var contentSpacing: CGFloat = 4
+    @ScaledMetric private var rowVerticalPadding: CGFloat = ThemeManager.Spacing.componentPadding / 2
+    @ScaledMetric private var priorityHorizontalPadding: CGFloat = ThemeManager.Spacing.componentPadding
+    @ScaledMetric private var priorityVerticalPadding: CGFloat = ThemeManager.Spacing.componentPadding / 4
+    @ScaledMetric private var priorityCornerRadius: CGFloat = ThemeManager.Spacing.componentPadding
+    @ScaledMetric private var contentSpacing: CGFloat = ThemeManager.Spacing.componentPadding / 2
     
     var body: some View {
         HStack(spacing: ThemeManager.Spacing.small) {

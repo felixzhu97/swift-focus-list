@@ -2,11 +2,11 @@ import SwiftUI
 
 struct PomodoroView: View {
     @ObservedObject var timer: PomodoroTimer
-    @ScaledMetric private var timerCircleSize: CGFloat = 250
-    @ScaledMetric private var buttonSize: CGFloat = 60
-    @ScaledMetric private var buttonSpacing: CGFloat = 20
-    @ScaledMetric private var sectionSpacing: CGFloat = 30
-    @ScaledMetric private var screenPadding: CGFloat = 16
+    @ScaledMetric private var timerCircleSize: CGFloat = ThemeManager.Spacing.timerCircleSize
+    @ScaledMetric private var buttonSize: CGFloat = ThemeManager.Spacing.buttonSize
+    @ScaledMetric private var buttonSpacing: CGFloat = ThemeManager.Spacing.buttonSpacing
+    @ScaledMetric private var sectionSpacing: CGFloat = ThemeManager.Spacing.section
+    @ScaledMetric private var screenPadding: CGFloat = ThemeManager.Spacing.screenMargin
     
     var body: some View {
         NavigationView {
