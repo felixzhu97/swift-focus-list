@@ -344,14 +344,29 @@ struct TodoRowView: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     let accessibilityManager: AccessibilityManager
+    
+    // MARK: - Scaled Metrics for Dynamic Type Support
     @ScaledMetric private var rowVerticalPadding: CGFloat = ThemeManager.Spacing.componentPadding / 2
     @ScaledMetric private var priorityHorizontalPadding: CGFloat = ThemeManager.Spacing.componentPadding
     @ScaledMetric private var priorityVerticalPadding: CGFloat = ThemeManager.Spacing.componentPadding / 4
     @ScaledMetric private var priorityCornerRadius: CGFloat = ThemeManager.Spacing.componentPadding
     @ScaledMetric private var contentSpacing: CGFloat = ThemeManager.Spacing.componentPadding / 2
+    @ScaledMetric private var priorityIconSize: CGFloat = 16
+    @ScaledMetric private var checkmarkSize: CGFloat = 24
+    
+    // MARK: - Animation State
+    @State private var isAnimatingCompletion = false
+    
+    // MARK: - Priority SF Symbol Mapping
+    private var prioritySymbol: String {
+        switch todo.priority {
+        case .high: return "exclamationmark.triangle.fill"
+        case .medium: return "minus.circle.fill"
+        case .low: return "checkmark.circle.fill"
+        }
+    }
     
     // MARK: - Accessibility Computed Properties
-    
     private var todoAccessibilityLabel: String {
         let priorityText = switch todo.priority {
         case .high: "高优先级"
@@ -360,83 +375,208 @@ struct TodoRowView: View {
         }
         
         let statusText = todo.isCompleted ? "已完成" : "未完成"
-        return "\(priorityText)任务：\(todo.title)，\(statusText)"
+        let dateText = DateFormatter.localizedString(from: todo.createdAt, dateStyle: .short, timeStyle: .none)
+        return "\(priorityText)任务：\(todo.title)，\(statusText)，创建于\(dateText)"
+    }
+    
+    private var checkmarkAccessibilityLabel: String {
+        todo.isCompleted ? "标记为未完成" : "标记为完成"
+    }
+    
+    private var priorityAccessibilityLabel: String {
+        let priorityText = switch todo.priority {
+        case .high: "高优先级"
+        case .medium: "中优先级"
+        case .low: "低优先级"
+        }
+        return "任务优先级：\(priorityText)"
     }
     
     var body: some View {
         HStack(spacing: ThemeManager.Spacing.small) {
+            // Enhanced Checkmark Button with Animation
             Button(action: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    isAnimatingCompletion = true
+                }
+                
                 accessibilityManager.triggerHapticFeedback(for: .todoComplete)
                 onToggle()
+                
                 let statusText = todo.isCompleted ? "任务已标记为未完成" : "任务已完成"
                 accessibilityManager.announceStateChange(statusText)
-            }) {
-                Image(systemName: todo.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(todo.isCompleted ? ThemeManager.SystemColors.success : ThemeManager.SystemColors.neutral)
-                    .font(ThemeManager.Typography.sectionTitle)
-            }
-            .accessibilityLabel(todo.isCompleted ? "标记为未完成" : "标记为完成")
-            .accessibilityHint("双击切换任务完成状态")
-            .frame(minWidth: accessibilityManager.minimumTouchTargetSize(), minHeight: accessibilityManager.minimumTouchTargetSize())
-            
-            VStack(alignment: .leading, spacing: contentSpacing) {
-                Text(todo.title)
-                    .font(ThemeManager.Typography.headline)
-                    .strikethrough(todo.isCompleted)
-                    .foregroundColor(todo.isCompleted ? ThemeManager.TextColors.secondary : ThemeManager.TextColors.primary)
-                    .accessibilityLabel("任务标题：\(todo.title)")
                 
+                // Reset animation state
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isAnimatingCompletion = false
+                }
+            }) {
+                ZStack {
+                    // Background circle for better touch target
+                    Circle()
+                        .fill(Color.clear)
+                        .frame(width: accessibilityManager.minimumTouchTargetSize(), 
+                               height: accessibilityManager.minimumTouchTargetSize())
+                    
+                    // Animated checkmark
+                    Image(systemName: todo.isCompleted ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: checkmarkSize, weight: .medium))
+                        .foregroundColor(todo.isCompleted ? ThemeManager.SystemColors.success : ThemeManager.SystemColors.neutral)
+                        .scaleEffect(isAnimatingCompletion ? 1.2 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: todo.isCompleted)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isAnimatingCompletion)
+                }
+            }
+            .accessibilityLabel(checkmarkAccessibilityLabel)
+            .accessibilityHint("双击切换任务完成状态")
+            .accessibilityAddTraits(todo.isCompleted ? [.isSelected] : [])
+            
+            // Enhanced Content with Priority Indicator
+            VStack(alignment: .leading, spacing: contentSpacing) {
+                // Task Title with Completion Animation
+                HStack(spacing: ThemeManager.Spacing.small / 2) {
+                    Text(todo.title)
+                        .font(ThemeManager.Typography.headline)
+                        .strikethrough(todo.isCompleted)
+                        .foregroundColor(todo.isCompleted ? ThemeManager.TextColors.secondary : ThemeManager.TextColors.primary)
+                        .animation(.easeInOut(duration: 0.2), value: todo.isCompleted)
+                    
+                    Spacer()
+                }
+                .accessibilityLabel("任务标题：\(todo.title)")
+                .accessibilityAddTraits(todo.isCompleted ? [.isSelected] : [])
+                
+                // Enhanced Priority and Date Row
                 HStack(spacing: ThemeManager.Spacing.small) {
-                    Text(todo.priority.rawValue)
-                        .font(ThemeManager.Typography.caption)
-                        .padding(.horizontal, priorityHorizontalPadding)
-                        .padding(.vertical, priorityVerticalPadding)
-                        .background(todo.priority.color.opacity(0.2))
-                        .foregroundColor(todo.priority.color)
-                        .cornerRadius(priorityCornerRadius)
-                        .accessibilityLabel("优先级：\(todo.priority.rawValue)")
+                    // Priority Indicator with SF Symbol
+                    HStack(spacing: ThemeManager.Spacing.small / 2) {
+                        Image(systemName: prioritySymbol)
+                            .font(.system(size: priorityIconSize, weight: .medium))
+                            .foregroundColor(todo.priority.color)
+                            .accessibilityHidden(true) // Hide from VoiceOver since we have text label
+                        
+                        Text(todo.priority.rawValue)
+                            .font(ThemeManager.Typography.caption)
+                            .fontWeight(.medium)
+                    }
+                    .padding(.horizontal, priorityHorizontalPadding)
+                    .padding(.vertical, priorityVerticalPadding)
+                    .background(
+                        RoundedRectangle(cornerRadius: priorityCornerRadius)
+                            .fill(todo.priority.color.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: priorityCornerRadius)
+                                    .stroke(todo.priority.color.opacity(0.3), lineWidth: 0.5)
+                            )
+                    )
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(priorityAccessibilityLabel)
                     
                     Spacer()
                     
+                    // Creation Date
                     Text(todo.createdAt, style: .date)
                         .font(ThemeManager.Typography.caption)
                         .foregroundColor(ThemeManager.TextColors.secondary)
-                        .accessibilityLabel("创建日期：\(todo.createdAt, style: .date)")
+                        .accessibilityLabel("创建日期：\(DateFormatter.localizedString(from: todo.createdAt, dateStyle: .medium, timeStyle: .none))")
                 }
-                .accessibilityElement(children: .combine)
             }
             .accessibilityElement(children: .combine)
+            .accessibilityLabel("任务内容：\(todo.title)，\(priorityAccessibilityLabel)")
             
-            Spacer()
-            
+            // Enhanced Context Menu with Better Touch Target
             Menu {
-                Button("编辑") {
+                // Edit Action
+                Button {
                     onEdit()
                     accessibilityManager.announceStateChange("打开编辑界面")
+                } label: {
+                    Label("编辑任务", systemImage: "pencil")
                 }
                 .accessibilityLabel("编辑任务")
                 .accessibilityHint("编辑当前任务的标题和优先级")
                 
-                Button("删除", role: .destructive) {
+                // Toggle Completion Action
+                Button {
+                    accessibilityManager.triggerHapticFeedback(for: .todoComplete)
+                    onToggle()
+                    let statusText = todo.isCompleted ? "任务已标记为未完成" : "任务已完成"
+                    accessibilityManager.announceStateChange(statusText)
+                } label: {
+                    Label(todo.isCompleted ? "标记为未完成" : "标记为完成", 
+                          systemImage: todo.isCompleted ? "arrow.uturn.backward" : "checkmark")
+                }
+                .accessibilityLabel(todo.isCompleted ? "标记为未完成" : "标记为完成")
+                
+                Divider()
+                
+                // Delete Action
+                Button(role: .destructive) {
                     accessibilityManager.triggerHapticFeedback(for: .error)
                     onDelete()
                     accessibilityManager.announceStateChange("任务已删除")
+                } label: {
+                    Label("删除任务", systemImage: "trash")
                 }
                 .accessibilityLabel("删除任务")
                 .accessibilityHint("永久删除当前任务")
             } label: {
-                Image(systemName: "ellipsis")
-                    .font(ThemeManager.Typography.body)
-                    .foregroundColor(ThemeManager.SystemColors.neutral)
+                ZStack {
+                    // Background for better touch target
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.clear)
+                        .frame(width: accessibilityManager.minimumTouchTargetSize(), 
+                               height: accessibilityManager.minimumTouchTargetSize())
+                    
+                    Image(systemName: "ellipsis")
+                        .font(ThemeManager.Typography.body)
+                        .foregroundColor(ThemeManager.SystemColors.neutral)
+                        .apply { image in
+                            if #available(macOS 13.0, iOS 16.0, *) {
+                                image.fontWeight(.medium)
+                            } else {
+                                image
+                            }
+                        }
+                }
             }
             .accessibilityLabel("任务操作菜单")
-            .accessibilityHint("双击打开编辑和删除选项")
-            .frame(minWidth: accessibilityManager.minimumTouchTargetSize(), minHeight: accessibilityManager.minimumTouchTargetSize())
+            .accessibilityHint("双击打开编辑、完成状态切换和删除选项")
         }
         .padding(.vertical, rowVerticalPadding)
-        .accessibilityElement(children: .combine)
+        .contentShape(Rectangle()) // Improve tap area
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(todoAccessibilityLabel)
-        .accessibilityHint("双击完成状态按钮切换任务状态，或使用操作菜单编辑删除")
+        .accessibilityHint("使用完成按钮切换状态，或使用操作菜单进行更多操作")
+        // Add context menu to entire row for better accessibility
+        .contextMenu {
+            Button {
+                onEdit()
+                accessibilityManager.announceStateChange("打开编辑界面")
+            } label: {
+                Label("编辑任务", systemImage: "pencil")
+            }
+            
+            Button {
+                accessibilityManager.triggerHapticFeedback(for: .todoComplete)
+                onToggle()
+                let statusText = todo.isCompleted ? "任务已标记为未完成" : "任务已完成"
+                accessibilityManager.announceStateChange(statusText)
+            } label: {
+                Label(todo.isCompleted ? "标记为未完成" : "标记为完成", 
+                      systemImage: todo.isCompleted ? "arrow.uturn.backward" : "checkmark")
+            }
+            
+            Divider()
+            
+            Button(role: .destructive) {
+                accessibilityManager.triggerHapticFeedback(for: .error)
+                onDelete()
+                accessibilityManager.announceStateChange("任务已删除")
+            } label: {
+                Label("删除任务", systemImage: "trash")
+            }
+        }
     }
 }
 
