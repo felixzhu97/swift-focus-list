@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TodoListView: View {
-    @StateObject private var todoManager = TodoManager()
+    @ObservedObject var todoManager: TodoManager
     @ObservedObject var accessibilityManager: AccessibilityManager
     @State private var editingTodo: TodoItem?
     @State private var showingAddTodo = false
@@ -95,7 +95,7 @@ private struct EmptyStateView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("任务列表为空，开始您的高效之旅")
-        .accessibilityHint("使用上方的输入框添加您的第一个任务，支持滑动手势操作和下拉刷新")
+        .accessibilityHint("点击右上角的加号按钮添加您的第一个任务，支持滑动手势操作和下拉刷新")
     }
 }
 
@@ -188,9 +188,9 @@ private struct TodoSection: View {
             ForEach(todos) { todo in
                 TodoRowView(
                     todo: todo,
-                    onToggle: { todoManager.toggleTodo(todo) },
+                    onToggle: { [weak todoManager] in todoManager?.toggleTodo(todo) },
                     onEdit: { editingTodo = todo },
-                    onDelete: { todoManager.deleteTodo(todo) },
+                    onDelete: { [weak todoManager] in todoManager?.deleteTodo(todo) },
                     accessibilityManager: accessibilityManager
                 )
                 .swipeActions(edge: .leading) {
@@ -198,9 +198,9 @@ private struct TodoSection: View {
                         title: todo.isCompleted ? "未完成" : "完成",
                         systemImage: todo.isCompleted ? "arrow.uturn.backward" : "checkmark",
                         color: todo.isCompleted ? .orange : .green,
-                        action: {
+                        action: { [weak todoManager] in
                             accessibilityManager.triggerHapticFeedback(for: .todoComplete)
-                            todoManager.toggleTodo(todo)
+                            todoManager?.toggleTodo(todo)
                             let message = todo.isCompleted ? "任务已标记为未完成" : "任务已完成"
                             accessibilityManager.announceStateChange(message)
                         }
@@ -212,9 +212,9 @@ private struct TodoSection: View {
                         systemImage: "trash",
                         color: .red,
                         role: .destructive,
-                        action: {
+                        action: { [weak todoManager] in
                             accessibilityManager.triggerHapticFeedback(for: .error)
-                            todoManager.deleteTodo(todo)
+                            todoManager?.deleteTodo(todo)
                             accessibilityManager.announceStateChange("任务已删除")
                         }
                     )
