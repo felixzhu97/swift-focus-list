@@ -5,7 +5,6 @@ struct TodoListView: View {
     @ObservedObject var accessibilityManager: AccessibilityManager
     @State private var editingTodo: TodoItem?
     @State private var showingAddTodo = false
-    @ScaledMetric private var screenPadding: CGFloat = DesignTokens.Spacing.screenMargin
     
     var body: some View {
         NavigationView {
@@ -69,69 +68,6 @@ private struct TodoContentView: View {
     }
 }
 
-private struct EmptyStateView: View {
-    var body: some View {
-        VStack(spacing: DesignTokens.Spacing.medium) {
-            Image(systemName: "checklist")
-                .font(.system(size: 64))
-                .foregroundColor(DesignTokens.SystemColors.neutral)
-            
-            Text("开始您的高效之旅")
-                .font(DesignTokens.Typography.sectionTitle)
-                .foregroundColor(DesignTokens.TextColors.primary)
-            
-            VStack(spacing: DesignTokens.Spacing.small) {
-                Text("还没有任务？没关系！")
-                    .font(DesignTokens.Typography.headline)
-                    .foregroundColor(DesignTokens.TextColors.secondary)
-                
-                Text("点击右上角的加号按钮添加您的第一个任务，开始使用番茄工作法提高效率")
-                    .font(DesignTokens.Typography.body)
-                    .foregroundColor(DesignTokens.TextColors.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, DesignTokens.Spacing.medium)
-            }
-            
-            GestureHintsView()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("任务列表为空，开始您的高效之旅")
-        .accessibilityHint("点击右上角的加号按钮添加您的第一个任务，支持滑动手势操作和下拉刷新")
-    }
-}
-
-private struct GestureHintsView: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
-            HStack {
-                Image(systemName: "arrow.left")
-                    .foregroundColor(DesignTokens.SystemColors.info)
-                Text("向左滑动完成任务")
-                    .font(DesignTokens.Typography.caption)
-                    .foregroundColor(DesignTokens.TextColors.secondary)
-            }
-            
-            HStack {
-                Image(systemName: "arrow.right")
-                    .foregroundColor(DesignTokens.SystemColors.warning)
-                Text("向右滑动编辑或删除")
-                    .font(DesignTokens.Typography.caption)
-                    .foregroundColor(DesignTokens.TextColors.secondary)
-            }
-            
-            HStack {
-                Image(systemName: "arrow.down")
-                    .foregroundColor(DesignTokens.SystemColors.neutral)
-                Text("下拉刷新列表")
-                    .font(DesignTokens.Typography.caption)
-                    .foregroundColor(DesignTokens.TextColors.secondary)
-            }
-        }
-        .padding(.top, DesignTokens.Spacing.medium)
-    }
-}
-
 private struct TodoList: View {
     @ObservedObject var todoManager: TodoManager
     @Binding var editingTodo: TodoItem?
@@ -159,99 +95,33 @@ private struct TodoList: View {
                 )
             }
         }
-        .apply { list in
-            #if os(iOS)
-            list.listStyle(.insetGrouped)
-            #else
-            list.listStyle(.sidebar)
-            #endif
-        }
+        .listStyle(platformListStyle)
         .refreshable {
-            await MainActor.run {
-                accessibilityManager.triggerHapticFeedback(for: .buttonTap)
-            }
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            await MainActor.run {
-                accessibilityManager.announceStateChange("列表已刷新")
-            }
+            await handleRefresh()
         }
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var platformListStyle: some ListStyle {
+        #if os(iOS)
+        return .insetGrouped
+        #else
+        return .sidebar
+        #endif
+    }
+    
+    // MARK: - Action Handlers
+    
+    private func handleRefresh() async {
+        // Trigger immediate feedback
+        accessibilityManager.triggerHapticFeedback(for: .buttonTap)
+        
+        // Brief delay for visual feedback
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        
+        // Announce completion
+        accessibilityManager.announceStateChange("列表已刷新")
     }
 }
 
-private struct TodoSection: View {
-    let title: String
-    let todos: [TodoItem]
-    @Binding var editingTodo: TodoItem?
-    let todoManager: TodoManager
-    let accessibilityManager: AccessibilityManager
-    
-    var body: some View {
-        Section {
-            ForEach(todos) { todo in
-                TodoRowView(
-                    todo: todo,
-                    onToggle: { todoManager.toggleTodo(todo) },
-                    onEdit: { editingTodo = todo },
-                    onDelete: { todoManager.deleteTodo(todo) },
-                    accessibilityManager: accessibilityManager
-                )
-                .swipeActions(edge: .leading) {
-                    SwipeActionButton(
-                        title: todo.isCompleted ? "未完成" : "完成",
-                        systemImage: todo.isCompleted ? "arrow.uturn.backward" : "checkmark",
-                        color: todo.isCompleted ? .orange : .green,
-                        action: { [weak todoManager] in
-                            accessibilityManager.triggerHapticFeedback(for: .todoComplete)
-                            todoManager?.toggleTodo(todo)
-                            let message = todo.isCompleted ? "任务已标记为未完成" : "任务已完成"
-                            accessibilityManager.announceStateChange(message)
-                        }
-                    )
-                }
-                .swipeActions(edge: .trailing) {
-                    SwipeActionButton(
-                        title: "删除",
-                        systemImage: "trash",
-                        color: .red,
-                        role: .destructive,
-                        action: { [weak todoManager] in
-                            accessibilityManager.triggerHapticFeedback(for: .error)
-                            todoManager?.deleteTodo(todo)
-                            accessibilityManager.announceStateChange("任务已删除")
-                        }
-                    )
-                    
-                    SwipeActionButton(
-                        title: "编辑",
-                        systemImage: "pencil",
-                        color: .blue,
-                        action: {
-                            editingTodo = todo
-                            accessibilityManager.announceStateChange("打开编辑界面")
-                        }
-                    )
-                }
-            }
-        } header: {
-            Text("\(title) (\(todos.count))")
-                .headerProminence(.increased)
-                .accessibilityLabel("\(title)任务，共\(todos.count)个")
-        }
-    }
-}
-
-private struct SwipeActionButton: View {
-    let title: String
-    let systemImage: String
-    let color: Color
-    var role: ButtonRole?
-    let action: () -> Void
-    
-    var body: some View {
-        Button(role: role, action: action) {
-            Label(title, systemImage: systemImage)
-        }
-        .tint(color)
-        .accessibilityLabel(title)
-    }
-}

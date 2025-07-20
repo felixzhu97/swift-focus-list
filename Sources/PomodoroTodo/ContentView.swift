@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var pomodoroTimer = PomodoroTimer()
+    @EnvironmentObject var pomodoroTimer: PomodoroTimer
     @StateObject private var accessibilityManager = AccessibilityManager()
     @StateObject private var todoManager = TodoManager()
     @State private var selectedTab = 0
@@ -103,4 +103,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environmentObject(PomodoroTimer())
 }
