@@ -151,59 +151,39 @@ private struct EditTodoForm: View {
     let accessibilityManager: AccessibilityManager
     
     var body: some View {
-        Form {
-            titleSection
-            prioritySection
-            infoSection
-        }
-        .apply { form in
-            if #available(iOS 16.0, macOS 13.0, *) {
-                form.formStyle(.grouped)
-            } else {
-                form
+        ScrollView {
+            VStack(spacing: DesignTokens.Spacing.large) {
+                titleSection
+                prioritySection
+                infoSection
             }
+            .padding()
         }
-
     }
     
     private var titleSection: some View {
-        Section {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
-                TextField("输入任务标题", text: $title)
-                    .font(DesignTokens.Typography.body)
-                    .focused(isTitleFieldFocused)
-                    .apply { textField in
-                        #if os(macOS)
-                        textField.textFieldStyle(.roundedBorder)
-                        #else
-                        textField.textFieldStyle(.plain)
-                        #endif
-                    }
-                    .accessibilityLabel("任务标题输入框")
-                    .accessibilityHint("输入或修改任务的标题")
-                    .accessibilityValue(title.isEmpty ? "空白" : title)
-                    .onChange(of: title) { _ in
-                        if titleValidationError != nil {
-                            titleValidationError = nil
-                        }
-                    }
-                    .onSubmit {
-                        validateTitle()
-                    }
-                
-                if let error = titleValidationError {
-                    Text(error)
-                        .font(DesignTokens.Typography.caption)
-                        .foregroundColor(DesignTokens.SystemColors.destructive)
-                        .accessibilityLabel("输入错误：\(error)")
-                }
-            }
-        } header: {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
             Text("任务内容")
                 .font(DesignTokens.Typography.caption)
+                .foregroundColor(DesignTokens.TextColors.secondary)
                 .accessibilityLabel("任务内容部分")
-        } footer: {
-            if titleValidationError == nil {
+            
+            TextField("输入任务标题", text: $title)
+                .textFieldStyle(.roundedBorder)
+                .font(DesignTokens.Typography.body)
+                .focused(isTitleFieldFocused)
+                .onChange(of: title) { _ in
+                    if titleValidationError != nil {
+                        titleValidationError = nil
+                    }
+                }
+            
+            if let error = titleValidationError {
+                Text(error)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundColor(DesignTokens.SystemColors.destructive)
+                    .accessibilityLabel("输入错误：\(error)")
+            } else {
                 Text("修改任务的描述内容")
                     .font(DesignTokens.Typography.caption)
                     .foregroundColor(DesignTokens.TextColors.secondary)

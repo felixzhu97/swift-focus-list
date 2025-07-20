@@ -128,59 +128,40 @@ private struct TodoForm: View {
     let accessibilityManager: AccessibilityManager
     
     var body: some View {
-        Form {
-            titleSection
-            prioritySection
-            helpSection
-        }
-        .apply { form in
-            if #available(iOS 16.0, macOS 13.0, *) {
-                form.formStyle(.grouped)
-            } else {
-                form
+        ScrollView {
+            VStack(spacing: DesignTokens.Spacing.large) {
+                titleSection
+                prioritySection
+                helpSection
             }
+            .padding()
         }
-
     }
     
     private var titleSection: some View {
-        Section {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
-                TextField("输入任务标题", text: $title)
-                    .font(DesignTokens.Typography.body)
-                    .focused(isTitleFieldFocused)
-                    .apply { textField in
-                        #if os(macOS)
-                        textField.textFieldStyle(.roundedBorder)
-                        #else
-                        textField.textFieldStyle(.plain)
-                        #endif
-                    }
-                    .accessibilityLabel("任务标题输入框")
-                    .accessibilityHint("输入新任务的标题")
-                    .accessibilityValue(title.isEmpty ? "空白" : title)
-                    .onChange(of: title) { _ in
-                        if titleValidationError != nil {
-                            titleValidationError = nil
-                        }
-                    }
-                    .onSubmit {
-                        validateTitle()
-                    }
-                
-                if let error = titleValidationError {
-                    Text(error)
-                        .font(DesignTokens.Typography.caption)
-                        .foregroundColor(DesignTokens.SystemColors.destructive)
-                        .accessibilityLabel("输入错误：\(error)")
-                }
-            }
-        } header: {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
             Text("任务内容")
                 .font(DesignTokens.Typography.caption)
+                .foregroundColor(DesignTokens.TextColors.secondary)
                 .accessibilityLabel("任务内容部分")
-        } footer: {
-            if titleValidationError == nil {
+            
+            TextField("输入任务标题", text: $title)
+                .textFieldStyle(.roundedBorder)
+                .font(DesignTokens.Typography.body)
+                .focused(isTitleFieldFocused)
+                .onChange(of: title) { newValue in
+                    print("TextField值变化: '\(newValue)'")
+                    if titleValidationError != nil {
+                        titleValidationError = nil
+                    }
+                }
+            
+            if let error = titleValidationError {
+                Text(error)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundColor(DesignTokens.SystemColors.destructive)
+                    .accessibilityLabel("输入错误：\(error)")
+            } else {
                 Text("输入您要完成的任务描述")
                     .font(DesignTokens.Typography.caption)
                     .foregroundColor(DesignTokens.TextColors.secondary)
@@ -189,13 +170,14 @@ private struct TodoForm: View {
     }
     
     private var prioritySection: some View {
-        Section {
-            priorityPicker
-        } header: {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
             Text("优先级")
                 .font(DesignTokens.Typography.caption)
+                .foregroundColor(DesignTokens.TextColors.secondary)
                 .accessibilityLabel("优先级设置部分")
-        } footer: {
+            
+            priorityPicker
+            
             Text("选择任务的重要程度，高优先级任务将显示在列表顶部")
                 .font(DesignTokens.Typography.caption)
                 .foregroundColor(DesignTokens.TextColors.secondary)
@@ -225,7 +207,12 @@ private struct TodoForm: View {
     }
     
     private var helpSection: some View {
-        Section {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
+            Text("帮助")
+                .font(DesignTokens.Typography.caption)
+                .foregroundColor(DesignTokens.TextColors.secondary)
+                .accessibilityLabel("使用帮助部分")
+            
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
                 Text("使用技巧")
                     .font(DesignTokens.Typography.headline)
@@ -237,10 +224,6 @@ private struct TodoForm: View {
                     TipRow(icon: "pencil", text: "右滑可以编辑或删除任务")
                 }
             }
-        } header: {
-            Text("帮助")
-                .font(DesignTokens.Typography.caption)
-                .accessibilityLabel("使用帮助部分")
         }
     }
     
