@@ -348,11 +348,24 @@ struct AccessibilityConfig {
 }
 
 /// Timer states for accessibility labeling
-indirect enum TimerState {
+enum TimerState {
     case idle
-    case working(remainingTime: TimeInterval)
-    case onBreak(remainingTime: TimeInterval)
-    case paused(previousState: TimerState)
+    case working
+    case onBreak
+    case paused
+    
+    /// Creates a timer state from PomodoroTimer properties
+    static func from(isRunning: Bool, isBreakTime: Bool, timeRemaining: TimeInterval) -> TimerState {
+        if !isRunning && timeRemaining > 0 {
+            return .paused
+        } else if timeRemaining <= 0 {
+            return .idle
+        } else if isBreakTime {
+            return .onBreak
+        } else {
+            return .working
+        }
+    }
 }
 
 /// Accessibility actions for hint generation

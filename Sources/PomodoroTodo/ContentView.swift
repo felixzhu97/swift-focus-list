@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var todoManager = TodoManager()
     @StateObject private var pomodoroTimer = PomodoroTimer()
     @StateObject private var accessibilityManager = AccessibilityManager()
     @State private var selectedTab = 0
@@ -17,7 +16,7 @@ struct ContentView: View {
                 .accessibilityLabel("番茄钟计时器")
                 .accessibilityHint("切换到番茄钟计时器界面")
             
-            TodoListView(todoManager: todoManager, accessibilityManager: accessibilityManager)
+            TodoListView(accessibilityManager: accessibilityManager)
                 .tabItem {
                     Image(systemName: "list.bullet")
                     Text("待办事项")

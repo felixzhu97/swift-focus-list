@@ -12,8 +12,26 @@ class PomodoroTimer: ObservableObject {
     private let shortBreakDuration = 5 * 60 // 5分钟短休息
     private let longBreakDuration = 15 * 60 // 15分钟长休息
     
-    // Accessibility manager for announcements
+    // Accessibility manager for announcements - using weak to prevent retain cycles
     weak var accessibilityManager: AccessibilityManager?
+    
+    // MARK: - Initialization
+    
+    init(accessibilityManager: AccessibilityManager? = nil) {
+        self.accessibilityManager = accessibilityManager
+    }
+    
+    /// Sets the accessibility manager for announcements and haptic feedback
+    func setAccessibilityManager(_ manager: AccessibilityManager) {
+        self.accessibilityManager = manager
+    }
+    
+    // MARK: - Lifecycle
+    
+    deinit {
+        timer?.invalidate()
+        timer = nil
+    }
     
     var formattedTime: String {
         let minutes = timeRemaining / 60
