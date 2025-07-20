@@ -192,13 +192,14 @@ private struct EditTodoForm: View {
     }
     
     private var prioritySection: some View {
-        Section {
-            priorityPicker
-        } header: {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
             Text("优先级")
                 .font(DesignTokens.Typography.caption)
+                .foregroundColor(DesignTokens.TextColors.secondary)
                 .accessibilityLabel("优先级设置部分")
-        } footer: {
+            
+            priorityPicker
+            
             Text("修改任务的重要程度，高优先级任务将显示在列表顶部")
                 .font(DesignTokens.Typography.caption)
                 .foregroundColor(DesignTokens.TextColors.secondary)
@@ -228,7 +229,12 @@ private struct EditTodoForm: View {
     }
     
     private var infoSection: some View {
-        Section {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
+            Text("任务信息")
+                .font(DesignTokens.Typography.caption)
+                .foregroundColor(DesignTokens.TextColors.secondary)
+                .accessibilityLabel("任务信息部分")
+            
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
                 HStack {
                     Text("任务状态")
@@ -257,10 +263,6 @@ private struct EditTodoForm: View {
                         .foregroundColor(DesignTokens.TextColors.secondary)
                 }
             }
-        } header: {
-            Text("任务信息")
-                .font(DesignTokens.Typography.caption)
-                .accessibilityLabel("任务信息部分")
         }
     }
     
