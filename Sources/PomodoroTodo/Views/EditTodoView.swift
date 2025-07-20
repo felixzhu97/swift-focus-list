@@ -34,62 +34,60 @@ struct EditTodoView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Navigation Bar
-                HStack {
-                    Button("取消") {
-                        handleCancel()
-                    }
-                    .accessibilityLabel("取消编辑任务")
-                    .accessibilityHint("双击取消编辑并关闭界面")
-                    
-                    Spacer()
-                    
-                    Text("编辑任务")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
-                    Spacer()
-                    
-                    Button("保存") {
-                        handleSave()
-                    }
-                    .disabled(!canSave)
-                    .apply { button in
-                        if #available(macOS 13.0, iOS 16.0, *) {
-                            button.fontWeight(.semibold)
-                        } else {
-                            button
-                        }
-                    }
-                    .accessibilityLabel("保存任务修改")
-                    .accessibilityHint("双击保存修改到任务")
+        VStack(spacing: 0) {
+            // Custom Navigation Bar
+            HStack {
+                Button("取消") {
+                    handleCancel()
                 }
-                .padding()
-                .background(DesignTokens.BackgroundColors.secondary)
+                .accessibilityLabel("取消编辑任务")
+                .accessibilityHint("双击取消编辑并关闭界面")
                 
-                // Form Content
-                EditTodoForm(
-                    title: $title,
-                    priority: $priority,
-                    titleValidationError: $titleValidationError,
-                    isTitleFieldFocused: $isTitleFieldFocused,
-                    originalTodo: todo,
-                    accessibilityManager: accessibilityManager
-                )
-            }
-            .onChange(of: title) { _ in
-                updateHasChanges()
-            }
-            .onChange(of: priority) { _ in
-                updateHasChanges()
-            }
-            .onAppear {
-                // Focus the title field when the view appears
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    isTitleFieldFocused = true
+                Spacer()
+                
+                Text("编辑任务")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Button("保存") {
+                    handleSave()
                 }
+                .disabled(!canSave)
+                .apply { button in
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        button.fontWeight(.semibold)
+                    } else {
+                        button
+                    }
+                }
+                .accessibilityLabel("保存任务修改")
+                .accessibilityHint("双击保存修改到任务")
+            }
+            .padding()
+            .background(DesignTokens.BackgroundColors.secondary)
+            
+            // Form Content
+            EditTodoForm(
+                title: $title,
+                priority: $priority,
+                titleValidationError: $titleValidationError,
+                isTitleFieldFocused: $isTitleFieldFocused,
+                originalTodo: todo,
+                accessibilityManager: accessibilityManager
+            )
+        }
+        .onChange(of: title) { (newValue: String) in
+            updateHasChanges()
+        }
+        .onChange(of: priority) { (newValue: TodoItem.Priority) in
+            updateHasChanges()
+        }
+        .onAppear {
+            // Focus the title field when the view appears
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isTitleFieldFocused = true
             }
         }
         .interactiveDismissDisabled(hasChanges)
@@ -174,7 +172,13 @@ private struct EditTodoForm: View {
                 TextField("输入任务标题", text: $title)
                     .font(DesignTokens.Typography.body)
                     .focused(isTitleFieldFocused)
-                    .textFieldStyle(.plain)
+                    .apply { textField in
+                        #if os(macOS)
+                        textField.textFieldStyle(.roundedBorder)
+                        #else
+                        textField.textFieldStyle(.plain)
+                        #endif
+                    }
                     .accessibilityLabel("任务标题输入框")
                     .accessibilityHint("输入或修改任务的标题")
                     .accessibilityValue(title.isEmpty ? "空白" : title)

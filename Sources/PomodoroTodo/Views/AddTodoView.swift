@@ -23,55 +23,53 @@ struct AddTodoView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Navigation Bar
-                HStack {
-                    Button("取消") {
-                        handleCancel()
-                    }
-                    .accessibilityLabel("取消添加任务")
-                    .accessibilityHint("双击取消添加并关闭界面")
-                    
-                    Spacer()
-                    
-                    Text("添加任务")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
-                    Spacer()
-                    
-                    Button("保存") {
-                        handleSave()
-                    }
-                    .disabled(!canSave)
-                    .apply { button in
-                        if #available(macOS 13.0, iOS 16.0, *) {
-                            button.fontWeight(.semibold)
-                        } else {
-                            button
-                        }
-                    }
-                    .accessibilityLabel("保存新任务")
-                    .accessibilityHint("双击保存新任务到列表")
+        VStack(spacing: 0) {
+            // Custom Navigation Bar
+            HStack {
+                Button("取消") {
+                    handleCancel()
                 }
-                .padding()
-                .background(DesignTokens.BackgroundColors.secondary)
+                .accessibilityLabel("取消添加任务")
+                .accessibilityHint("双击取消添加并关闭界面")
                 
-                // Form Content
-                TodoForm(
-                    title: $title,
-                    priority: $priority,
-                    titleValidationError: $titleValidationError,
-                    isTitleFieldFocused: $isTitleFieldFocused,
-                    accessibilityManager: accessibilityManager
-                )
-            }
-            .onAppear {
-                // Focus the title field when the view appears
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    isTitleFieldFocused = true
+                Spacer()
+                
+                Text("添加任务")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Button("保存") {
+                    handleSave()
                 }
+                .disabled(!canSave)
+                .apply { button in
+                    if #available(macOS 13.0, iOS 16.0, *) {
+                        button.fontWeight(.semibold)
+                    } else {
+                        button
+                    }
+                }
+                .accessibilityLabel("保存新任务")
+                .accessibilityHint("双击保存新任务到列表")
+            }
+            .padding()
+            .background(DesignTokens.BackgroundColors.secondary)
+            
+            // Form Content
+            TodoForm(
+                title: $title,
+                priority: $priority,
+                titleValidationError: $titleValidationError,
+                isTitleFieldFocused: $isTitleFieldFocused,
+                accessibilityManager: accessibilityManager
+            )
+        }
+        .onAppear {
+            // Focus the title field when the view appears
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isTitleFieldFocused = true
             }
         }
         .interactiveDismissDisabled(!title.isEmpty)
@@ -151,7 +149,13 @@ private struct TodoForm: View {
                 TextField("输入任务标题", text: $title)
                     .font(DesignTokens.Typography.body)
                     .focused(isTitleFieldFocused)
-                    .textFieldStyle(.plain)
+                    .apply { textField in
+                        #if os(macOS)
+                        textField.textFieldStyle(.roundedBorder)
+                        #else
+                        textField.textFieldStyle(.plain)
+                        #endif
+                    }
                     .accessibilityLabel("任务标题输入框")
                     .accessibilityHint("输入新任务的标题")
                     .accessibilityValue(title.isEmpty ? "空白" : title)
