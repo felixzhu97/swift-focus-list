@@ -6,7 +6,7 @@ struct TodoListView: View {
     @State private var newTodoTitle = ""
     @State private var selectedPriority: TodoItem.Priority = .medium
     @State private var editingTodo: TodoItem?
-    @ScaledMetric private var screenPadding: CGFloat = ThemeManager.Spacing.screenMargin
+    @ScaledMetric private var screenPadding: CGFloat = DesignTokens.Spacing.screenMargin
     
     var body: some View {
         NavigationView {
@@ -59,10 +59,10 @@ private struct AddTodoSection: View {
     let accessibilityManager: AccessibilityManager
     
     var body: some View {
-        HStack(spacing: ThemeManager.Spacing.small) {
+        HStack(spacing: DesignTokens.Spacing.small) {
             TextField("添加新任务...", text: $newTodoTitle)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                .font(ThemeManager.Typography.body)
+                .font(DesignTokens.Typography.body)
                 .accessibilityLabel("新任务标题输入框")
                 .accessibilityHint("输入要添加的新任务标题")
                 .onSubmit {
@@ -71,8 +71,8 @@ private struct AddTodoSection: View {
             
             Button(action: onAddTodo) {
                 Image(systemName: "plus.circle.fill")
-                    .font(ThemeManager.Typography.sectionTitle)
-                    .foregroundColor(ThemeManager.SystemColors.info)
+                    .font(DesignTokens.Typography.sectionTitle)
+                    .foregroundColor(DesignTokens.SystemColors.info)
             }
             .disabled(newTodoTitle.trimmingCharacters(in: .whitespaces).isEmpty)
             .accessibilityLabel("添加新任务")
@@ -103,25 +103,25 @@ private struct TodoContentView: View {
 
 private struct EmptyStateView: View {
     var body: some View {
-        VStack(spacing: ThemeManager.Spacing.medium) {
+        VStack(spacing: DesignTokens.Spacing.medium) {
             Image(systemName: "checklist")
                 .font(.system(size: 64))
-                .foregroundColor(ThemeManager.SystemColors.neutral)
+                .foregroundColor(DesignTokens.SystemColors.neutral)
             
             Text("开始您的高效之旅")
-                .font(ThemeManager.Typography.sectionTitle)
-                .foregroundColor(ThemeManager.TextColors.primary)
+                .font(DesignTokens.Typography.sectionTitle)
+                .foregroundColor(DesignTokens.TextColors.primary)
             
-            VStack(spacing: ThemeManager.Spacing.small) {
+            VStack(spacing: DesignTokens.Spacing.small) {
                 Text("还没有任务？没关系！")
-                    .font(ThemeManager.Typography.headline)
-                    .foregroundColor(ThemeManager.TextColors.secondary)
+                    .font(DesignTokens.Typography.headline)
+                    .foregroundColor(DesignTokens.TextColors.secondary)
                 
                 Text("在上方输入框中添加您的第一个任务，开始使用番茄工作法提高效率")
-                    .font(ThemeManager.Typography.body)
-                    .foregroundColor(ThemeManager.TextColors.secondary)
+                    .font(DesignTokens.Typography.body)
+                    .foregroundColor(DesignTokens.TextColors.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, ThemeManager.Spacing.medium)
+                    .padding(.horizontal, DesignTokens.Spacing.medium)
             }
             
             GestureHintsView()
@@ -135,32 +135,32 @@ private struct EmptyStateView: View {
 
 private struct GestureHintsView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: ThemeManager.Spacing.small) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
             HStack {
                 Image(systemName: "arrow.left")
-                    .foregroundColor(ThemeManager.SystemColors.info)
+                    .foregroundColor(DesignTokens.SystemColors.info)
                 Text("向左滑动完成任务")
-                    .font(ThemeManager.Typography.caption)
-                    .foregroundColor(ThemeManager.TextColors.secondary)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundColor(DesignTokens.TextColors.secondary)
             }
             
             HStack {
                 Image(systemName: "arrow.right")
-                    .foregroundColor(ThemeManager.SystemColors.warning)
+                    .foregroundColor(DesignTokens.SystemColors.warning)
                 Text("向右滑动编辑或删除")
-                    .font(ThemeManager.Typography.caption)
-                    .foregroundColor(ThemeManager.TextColors.secondary)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundColor(DesignTokens.TextColors.secondary)
             }
             
             HStack {
                 Image(systemName: "arrow.down")
-                    .foregroundColor(ThemeManager.SystemColors.neutral)
+                    .foregroundColor(DesignTokens.SystemColors.neutral)
                 Text("下拉刷新列表")
-                    .font(ThemeManager.Typography.caption)
-                    .foregroundColor(ThemeManager.TextColors.secondary)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundColor(DesignTokens.TextColors.secondary)
             }
         }
-        .padding(.top, ThemeManager.Spacing.medium)
+        .padding(.top, DesignTokens.Spacing.medium)
     }
 }
 

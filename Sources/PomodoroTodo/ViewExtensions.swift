@@ -97,7 +97,7 @@ extension View {
     
     /// Applies consistent card styling across the app
     func cardStyle(
-        backgroundColor: Color = ThemeManager.BackgroundColors.primary,
+        backgroundColor: Color = DesignTokens.BackgroundColors.primary,
         cornerRadius: CGFloat = 12,
         shadowRadius: CGFloat = 2
     ) -> some View {
@@ -109,7 +109,7 @@ extension View {
     
     /// Applies responsive padding based on device size
     func responsivePadding(_ edges: Edge.Set = .all) -> some View {
-        self.padding(edges, ThemeManager.Spacing.screenMargin)
+        self.padding(edges, DesignTokens.Spacing.screenMargin)
     }
 }
 

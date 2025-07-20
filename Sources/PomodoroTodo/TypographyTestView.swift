@@ -2,73 +2,73 @@ import SwiftUI
 
 /// Test view to demonstrate typography scaling with Dynamic Type
 struct TypographyTestView: View {
-    @ScaledMetric private var timerCircleSize: CGFloat = ThemeManager.Spacing.timerCircleSize
-    @ScaledMetric private var buttonSize: CGFloat = ThemeManager.Spacing.buttonSize
-    @ScaledMetric private var spacing: CGFloat = ThemeManager.Spacing.medium
+    @ScaledMetric private var timerCircleSize: CGFloat = DesignTokens.Spacing.timerCircleSize
+    @ScaledMetric private var buttonSize: CGFloat = DesignTokens.Spacing.buttonSize
+    @ScaledMetric private var spacing: CGFloat = DesignTokens.Spacing.medium
     
     var body: some View {
         ScrollView {
             VStack(spacing: spacing) {
                 Group {
                     Text("Typography Scale Test")
-                        .font(ThemeManager.Typography.sectionTitle)
-                        .foregroundColor(ThemeManager.TextColors.primary)
+                        .font(DesignTokens.Typography.sectionTitle)
+                        .foregroundColor(DesignTokens.TextColors.primary)
                     
                     Text("Timer Display (Large Title + Monospaced)")
-                        .font(ThemeManager.Typography.timerDisplay)
-                        .foregroundColor(ThemeManager.TextColors.primary)
+                        .font(DesignTokens.Typography.timerDisplay)
+                        .foregroundColor(DesignTokens.TextColors.primary)
                     
                     Text("Section Title (Title2 + Semibold)")
-                        .font(ThemeManager.Typography.sectionTitle)
-                        .foregroundColor(ThemeManager.TextColors.primary)
+                        .font(DesignTokens.Typography.sectionTitle)
+                        .foregroundColor(DesignTokens.TextColors.primary)
                     
                     Text("Headline Text")
-                        .font(ThemeManager.Typography.headline)
-                        .foregroundColor(ThemeManager.TextColors.primary)
+                        .font(DesignTokens.Typography.headline)
+                        .foregroundColor(DesignTokens.TextColors.primary)
                     
                     Text("Body Text - This is the standard body text that should scale with Dynamic Type settings.")
-                        .font(ThemeManager.Typography.body)
-                        .foregroundColor(ThemeManager.TextColors.primary)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.TextColors.primary)
                     
                     Text("Caption Text - Secondary information")
-                        .font(ThemeManager.Typography.caption)
-                        .foregroundColor(ThemeManager.TextColors.secondary)
+                        .font(DesignTokens.Typography.caption)
+                        .foregroundColor(DesignTokens.TextColors.secondary)
                     
                     Text("Caption2 Text - Very small details")
-                        .font(ThemeManager.Typography.caption2)
-                        .foregroundColor(ThemeManager.TextColors.tertiary)
+                        .font(DesignTokens.Typography.caption2)
+                        .foregroundColor(DesignTokens.TextColors.tertiary)
                 }
                 
                 Divider()
                 
                 Group {
                     Text("Scaled Metrics Test")
-                        .font(ThemeManager.Typography.sectionTitle)
-                        .foregroundColor(ThemeManager.TextColors.primary)
+                        .font(DesignTokens.Typography.sectionTitle)
+                        .foregroundColor(DesignTokens.TextColors.primary)
                     
                     Text("Timer Circle Size: \(Int(timerCircleSize))pt")
-                        .font(ThemeManager.Typography.body)
+                        .font(DesignTokens.Typography.body)
                     
                     Text("Button Size: \(Int(buttonSize))pt")
-                        .font(ThemeManager.Typography.body)
+                        .font(DesignTokens.Typography.body)
                     
                     Text("Spacing: \(Int(spacing))pt")
-                        .font(ThemeManager.Typography.body)
+                        .font(DesignTokens.Typography.body)
                     
                     // Visual demonstration
                     Circle()
-                        .stroke(ThemeManager.TimerColors.workSession, lineWidth: 4)
+                        .stroke(DesignTokens.TimerColors.workSession, lineWidth: 4)
                         .frame(width: timerCircleSize * 0.5, height: timerCircleSize * 0.5)
                         .overlay(
                             Text("25:00")
-                                .font(ThemeManager.Typography.timerDisplay)
+                                .font(DesignTokens.Typography.timerDisplay)
                                 .monospacedDigit()
-                                .foregroundColor(ThemeManager.TextColors.primary)
+                                .foregroundColor(DesignTokens.TextColors.primary)
                         )
                     
                     HStack(spacing: spacing) {
                         Circle()
-                            .fill(ThemeManager.TimerColors.workSession)
+                            .fill(DesignTokens.TimerColors.workSession)
                             .frame(width: buttonSize, height: buttonSize)
                             .overlay(
                                 Image(systemName: "play.fill")
@@ -77,7 +77,7 @@ struct TypographyTestView: View {
                             )
                         
                         Circle()
-                            .fill(ThemeManager.SystemColors.neutral)
+                            .fill(DesignTokens.SystemColors.neutral)
                             .frame(width: buttonSize, height: buttonSize)
                             .overlay(
                                 Image(systemName: "stop.fill")
@@ -89,32 +89,32 @@ struct TypographyTestView: View {
                 
                 Divider()
                 
-                VStack(alignment: .leading, spacing: ThemeManager.Spacing.small) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
                     Text("Instructions:")
-                        .font(ThemeManager.Typography.headline)
-                        .foregroundColor(ThemeManager.TextColors.primary)
+                        .font(DesignTokens.Typography.headline)
+                        .foregroundColor(DesignTokens.TextColors.primary)
                     
                     Text("1. Go to Settings > Display & Brightness > Text Size")
-                        .font(ThemeManager.Typography.body)
-                        .foregroundColor(ThemeManager.TextColors.primary)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.TextColors.primary)
                     
                     Text("2. Adjust the text size slider")
-                        .font(ThemeManager.Typography.body)
-                        .foregroundColor(ThemeManager.TextColors.primary)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.TextColors.primary)
                     
                     Text("3. Return to this app to see the scaling effect")
-                        .font(ThemeManager.Typography.body)
-                        .foregroundColor(ThemeManager.TextColors.primary)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.TextColors.primary)
                     
                     Text("4. For larger sizes, enable 'Larger Accessibility Sizes'")
-                        .font(ThemeManager.Typography.caption)
-                        .foregroundColor(ThemeManager.TextColors.secondary)
+                        .font(DesignTokens.Typography.caption)
+                        .foregroundColor(DesignTokens.TextColors.secondary)
                 }
-                .padding(ThemeManager.Spacing.medium)
-                .background(ThemeManager.BackgroundColors.secondary)
-                .cornerRadius(ThemeManager.Spacing.listItem)
+                .padding(DesignTokens.Spacing.medium)
+                .background(DesignTokens.BackgroundColors.secondary)
+                .cornerRadius(DesignTokens.Spacing.listItem)
             }
-            .padding(ThemeManager.Spacing.screenMargin)
+            .padding(DesignTokens.Spacing.screenMargin)
         }
         .navigationTitle("Typography Test")
     }

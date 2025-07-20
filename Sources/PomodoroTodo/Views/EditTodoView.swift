@@ -62,26 +62,26 @@ private struct EditTodoNavigationBar: View {
     var body: some View {
         HStack {
             Button("取消", action: onCancel)
-                .font(ThemeManager.Typography.button)
+                .font(DesignTokens.Typography.button)
                 .accessibilityLabel("取消编辑")
                 .accessibilityHint("双击取消编辑并关闭界面")
             
             Spacer()
             
             Text("编辑任务")
-                .font(ThemeManager.Typography.headline)
+                .font(DesignTokens.Typography.headline)
                 .fontWeight(.semibold)
             
             Spacer()
             
             Button("保存", action: onSave)
-                .font(ThemeManager.Typography.button)
+                .font(DesignTokens.Typography.button)
                 .disabled(!isValidTitle)
                 .accessibilityLabel("保存任务")
                 .accessibilityHint("双击保存修改并关闭界面")
         }
         .padding()
-        .background(ThemeManager.BackgroundColors.secondary)
+        .background(DesignTokens.BackgroundColors.secondary)
     }
 }
 
@@ -93,13 +93,13 @@ private struct EditTodoForm: View {
         Form {
             Section {
                 TextField("任务标题", text: $title)
-                    .font(ThemeManager.Typography.body)
+                    .font(DesignTokens.Typography.body)
                     .accessibilityLabel("任务标题输入框")
                     .accessibilityHint("输入或修改任务的标题")
                     .accessibilityValue(title.isEmpty ? "空白" : title)
             } header: {
                 Text("任务内容")
-                    .font(ThemeManager.Typography.caption)
+                    .font(DesignTokens.Typography.caption)
                     .accessibilityLabel("任务内容部分")
             }
             
@@ -107,7 +107,7 @@ private struct EditTodoForm: View {
                 Picker("优先级", selection: $priority) {
                     ForEach(TodoItem.Priority.allCases, id: \.self) { priority in
                         Text(priority.rawValue)
-                            .font(ThemeManager.Typography.body)
+                            .font(DesignTokens.Typography.body)
                             .tag(priority)
                             .accessibilityLabel("优先级：\(priority.rawValue)")
                     }
@@ -118,7 +118,7 @@ private struct EditTodoForm: View {
                 .accessibilityValue("当前选择：\(priority.rawValue)")
             } header: {
                 Text("优先级")
-                    .font(ThemeManager.Typography.caption)
+                    .font(DesignTokens.Typography.caption)
                     .accessibilityLabel("优先级设置部分")
             }
         }

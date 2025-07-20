@@ -94,7 +94,7 @@ class AccessibilityManager: ObservableObject {
             #endif
         } else {
             // Use semantic primary color which automatically provides good contrast
-            return ThemeManager.TextColors.primary
+            return DesignTokens.TextColors.primary
         }
     }
     

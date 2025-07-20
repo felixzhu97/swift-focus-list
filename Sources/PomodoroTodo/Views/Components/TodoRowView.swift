@@ -8,8 +8,8 @@ struct TodoRowView: View {
     let accessibilityManager: AccessibilityManager
     
     // MARK: - Scaled Metrics for Dynamic Type Support
-    @ScaledMetric private var rowVerticalPadding: CGFloat = ThemeManager.Spacing.componentPadding / 2
-    @ScaledMetric private var contentSpacing: CGFloat = ThemeManager.Spacing.componentPadding / 2
+    @ScaledMetric private var rowVerticalPadding: CGFloat = DesignTokens.Spacing.componentPadding / 2
+    @ScaledMetric private var contentSpacing: CGFloat = DesignTokens.Spacing.componentPadding / 2
     @ScaledMetric private var checkmarkSize: CGFloat = 24
     
     // MARK: - Animation State
@@ -28,7 +28,7 @@ struct TodoRowView: View {
     }
     
     var body: some View {
-        HStack(spacing: ThemeManager.Spacing.small) {
+        HStack(spacing: DesignTokens.Spacing.small) {
             CheckmarkButton(
                 isCompleted: todo.isCompleted,
                 isAnimating: isAnimatingCompletion,
@@ -105,7 +105,7 @@ private struct CheckmarkButton: View {
                 
                 Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: checkmarkSize, weight: .medium))
-                    .foregroundColor(isCompleted ? ThemeManager.SystemColors.success : ThemeManager.SystemColors.neutral)
+                    .foregroundColor(isCompleted ? DesignTokens.SystemColors.success : DesignTokens.SystemColors.neutral)
                     .scaleEffect(isAnimating ? 1.2 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isCompleted)
                     .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isAnimating)
@@ -123,11 +123,11 @@ private struct TodoContent: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: contentSpacing) {
-            HStack(spacing: ThemeManager.Spacing.small / 2) {
+            HStack(spacing: DesignTokens.Spacing.small / 2) {
                 Text(todo.title)
-                    .font(ThemeManager.Typography.headline)
+                    .font(DesignTokens.Typography.headline)
                     .strikethrough(todo.isCompleted)
-                    .foregroundColor(todo.isCompleted ? ThemeManager.TextColors.secondary : ThemeManager.TextColors.primary)
+                    .foregroundColor(todo.isCompleted ? DesignTokens.TextColors.secondary : DesignTokens.TextColors.primary)
                     .animation(.easeInOut(duration: 0.2), value: todo.isCompleted)
                 
                 Spacer()
@@ -135,14 +135,14 @@ private struct TodoContent: View {
             .accessibilityLabel("任务标题：\(todo.title)")
             .accessibilityAddTraits(todo.isCompleted ? [.isSelected] : [])
             
-            HStack(spacing: ThemeManager.Spacing.small) {
+            HStack(spacing: DesignTokens.Spacing.small) {
                 PriorityBadge(priority: todo.priority)
                 
                 Spacer()
                 
                 Text(todo.createdAt, style: .date)
-                    .font(ThemeManager.Typography.caption)
-                    .foregroundColor(ThemeManager.TextColors.secondary)
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundColor(DesignTokens.TextColors.secondary)
                     .accessibilityLabel("创建日期：\(DateFormatter.localizedString(from: todo.createdAt, dateStyle: .medium, timeStyle: .none))")
             }
         }
@@ -175,8 +175,8 @@ private struct TodoActionsMenu: View {
                            height: accessibilityManager.minimumTouchTargetSize())
                 
                 Image(systemName: "ellipsis")
-                    .font(ThemeManager.Typography.body)
-                    .foregroundColor(ThemeManager.SystemColors.neutral)
+                    .font(DesignTokens.Typography.body)
+                    .foregroundColor(DesignTokens.SystemColors.neutral)
                     .apply { image in
                         if #available(macOS 13.0, iOS 16.0, *) {
                             image.fontWeight(.medium)

@@ -65,7 +65,7 @@ struct TodoItem: Identifiable, Codable, Validatable {
         // MARK: - Computed Properties
         
         var color: Color {
-            ThemeManager.PriorityColors.color(for: self)
+            DesignTokens.PriorityColors.color(for: self)
         }
         
         var sortOrder: Int {

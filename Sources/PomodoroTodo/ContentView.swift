@@ -25,7 +25,7 @@ struct ContentView: View {
                 .accessibilityLabel("待办事项列表")
                 .accessibilityHint("切换到待办事项管理界面")
         }
-        .accentColor(ThemeManager.SystemColors.accent)
+        .accentColor(DesignTokens.SystemColors.accent)
         .onAppear {
             // Connect accessibility manager to timer for announcements
             pomodoroTimer.accessibilityManager = accessibilityManager
