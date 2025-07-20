@@ -67,8 +67,16 @@ struct AddTodoView: View {
             )
         }
         .onAppear {
+            print("AddTodoView出现")
             // Focus the title field when the view appears
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                print("尝试设置焦点")
+                isTitleFieldFocused = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
+            print("窗口成为焦点")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isTitleFieldFocused = true
             }
         }
@@ -128,14 +136,12 @@ private struct TodoForm: View {
     let accessibilityManager: AccessibilityManager
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: DesignTokens.Spacing.large) {
-                titleSection
-                prioritySection
-                helpSection
-            }
-            .padding()
+        VStack(spacing: DesignTokens.Spacing.large) {
+            titleSection
+            prioritySection
+            helpSection
         }
+        .padding()
     }
     
     private var titleSection: some View {
@@ -149,11 +155,18 @@ private struct TodoForm: View {
                 .textFieldStyle(.roundedBorder)
                 .font(DesignTokens.Typography.body)
                 .focused(isTitleFieldFocused)
-                .onChange(of: title) { newValue in
-                    print("TextField值变化: '\(newValue)'")
+                .onTapGesture {
+                    print("TextField被点击")
+                    isTitleFieldFocused.wrappedValue = true
+                }
+                .onChange(of: title) { _ in
+                    print("TextField值变化: '\(title)'")
                     if titleValidationError != nil {
                         titleValidationError = nil
                     }
+                }
+                .onSubmit {
+                    print("TextField提交")
                 }
             
             if let error = titleValidationError {
@@ -200,9 +213,9 @@ private struct TodoForm: View {
         .accessibilityLabel("任务优先级选择器")
         .accessibilityHint("选择任务的优先级：高、中或低")
         .accessibilityValue("当前选择：\(priority.rawValue)")
-        .onChange(of: priority) { newPriority in
+        .onChange(of: priority) { _ in
             accessibilityManager.triggerHapticFeedback(for: .buttonTap)
-            accessibilityManager.announceStateChange("优先级已设置为\(newPriority.rawValue)")
+            accessibilityManager.announceStateChange("优先级已设置为\(priority.rawValue)")
         }
     }
     

@@ -78,15 +78,15 @@ struct EditTodoView: View {
                 accessibilityManager: accessibilityManager
             )
         }
-        .onChange(of: title) { (newValue: String) in
+        .onChange(of: title) { _ in
             updateHasChanges()
         }
-        .onChange(of: priority) { (newValue: TodoItem.Priority) in
+        .onChange(of: priority) { _ in
             updateHasChanges()
         }
         .onAppear {
             // Focus the title field when the view appears
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 isTitleFieldFocused = true
             }
         }
@@ -151,14 +151,12 @@ private struct EditTodoForm: View {
     let accessibilityManager: AccessibilityManager
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: DesignTokens.Spacing.large) {
-                titleSection
-                prioritySection
-                infoSection
-            }
-            .padding()
+        VStack(spacing: DesignTokens.Spacing.large) {
+            titleSection
+            prioritySection
+            infoSection
         }
+        .padding()
     }
     
     private var titleSection: some View {
@@ -222,9 +220,9 @@ private struct EditTodoForm: View {
         .accessibilityLabel("任务优先级选择器")
         .accessibilityHint("选择任务的优先级：高、中或低")
         .accessibilityValue("当前选择：\(priority.rawValue)")
-        .onChange(of: priority) { newPriority in
+        .onChange(of: priority) { _ in
             accessibilityManager.triggerHapticFeedback(for: .buttonTap)
-            accessibilityManager.announceStateChange("优先级已设置为\(newPriority.rawValue)")
+            accessibilityManager.announceStateChange("优先级已设置为\(priority.rawValue)")
         }
     }
     
