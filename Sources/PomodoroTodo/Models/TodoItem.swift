@@ -1,12 +1,61 @@
 import SwiftUI
 import Foundation
 
-struct TodoItem: Identifiable, Codable {
+// MARK: - Validation Protocol
+
+protocol Validatable {
+    var isValid: Bool { get }
+    var validationErrors: [String] { get }
+}
+
+struct TodoItem: Identifiable, Codable, Validatable {
     var id = UUID()
     var title: String
     var isCompleted: Bool = false
     var priority: Priority = .medium
     var createdAt = Date()
+    
+    // MARK: - Validation
+    
+    var isValid: Bool {
+        validationErrors.isEmpty
+    }
+    
+    var validationErrors: [String] {
+        var errors: [String] = []
+        
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedTitle.isEmpty {
+            errors.append("任务标题不能为空")
+        }
+        
+        if trimmedTitle.count > 200 {
+            errors.append("任务标题不能超过200个字符")
+        }
+        
+        if createdAt > Date() {
+            errors.append("创建时间不能是未来时间")
+        }
+        
+        return errors
+    }
+    
+    // MARK: - Computed Properties
+    
+    /// Returns a cleaned version of the title
+    var cleanTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    /// Returns the age of the todo item in days
+    var ageInDays: Int {
+        Calendar.current.dateComponents([.day], from: createdAt, to: Date()).day ?? 0
+    }
+    
+    /// Returns true if the todo was created today
+    var isCreatedToday: Bool {
+        Calendar.current.isDateInToday(createdAt)
+    }
     
     enum Priority: String, CaseIterable, Codable, Comparable {
         case high = "高"
