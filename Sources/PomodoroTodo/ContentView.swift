@@ -7,38 +7,41 @@ struct ContentView: View {
     @State private var selectedTab = 0
     
     var body: some View {
-        TabView(selection: $selectedTab) {
-            PomodoroView(timer: pomodoroTimer, accessibilityManager: accessibilityManager)
-                .tabItem {
-                    Label {
-                        Text("番茄钟")
-                    } icon: {
-                        Image(systemName: timerTabIcon)
-                            .symbolRenderingMode(.hierarchical)
-                    }
+        Group {
+            if #available(iOS 16.0, macOS 13.0, *) {
+                ResponsiveNavigationView {
+                    // Timer Content
+                    PomodoroView(timer: pomodoroTimer, accessibilityManager: accessibilityManager)
+                        .badge(timerBadgeText)
+                        .accessibilityLabel(timerAccessibilityLabel)
+                        .accessibilityHint("切换到番茄钟计时器界面，管理工作和休息时间")
+                        .accessibilityValue(timerAccessibilityValue)
+                } todoContent: {
+                    // Todo Content
+                    TodoListView(todoManager: todoManager, accessibilityManager: accessibilityManager)
+                        .accessibilityLabel("待办事项列表")
+                        .accessibilityHint("切换到待办事项管理界面，查看和编辑任务")
+                        .accessibilityValue(todoAccessibilityValue)
                 }
-                .tag(0)
-                .badge(timerBadgeText)
-                .accessibilityLabel(timerAccessibilityLabel)
-                .accessibilityHint("切换到番茄钟计时器界面，管理工作和休息时间")
-                .accessibilityValue(timerAccessibilityValue)
-            
-            TodoListView(todoManager: todoManager, accessibilityManager: accessibilityManager)
-                .tabItem {
-                    Label {
-                        Text("待办事项")
-                    } icon: {
-                        Image(systemName: "checklist")
-                            .symbolRenderingMode(.hierarchical)
-                    }
+            } else {
+                LegacyResponsiveNavigationView {
+                    // Timer Content
+                    PomodoroView(timer: pomodoroTimer, accessibilityManager: accessibilityManager)
+                        .badge(timerBadgeText)
+                        .accessibilityLabel(timerAccessibilityLabel)
+                        .accessibilityHint("切换到番茄钟计时器界面，管理工作和休息时间")
+                        .accessibilityValue(timerAccessibilityValue)
+                } todoContent: {
+                    // Todo Content
+                    TodoListView(todoManager: todoManager, accessibilityManager: accessibilityManager)
+                        .accessibilityLabel("待办事项列表")
+                        .accessibilityHint("切换到待办事项管理界面，查看和编辑任务")
+                        .accessibilityValue(todoAccessibilityValue)
                 }
-                .tag(1)
-                .accessibilityLabel("待办事项列表")
-                .accessibilityHint("切换到待办事项管理界面，查看和编辑任务")
-                .accessibilityValue(todoAccessibilityValue)
+            }
         }
+        .responsiveLayout()
         .accentColor(DesignTokens.SystemColors.accent)
-        .tabViewStyle(.automatic)
         .onAppear {
             // Connect accessibility manager to timer for announcements
             pomodoroTimer.accessibilityManager = accessibilityManager

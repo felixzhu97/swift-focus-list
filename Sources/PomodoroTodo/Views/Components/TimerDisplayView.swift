@@ -3,7 +3,7 @@ import SwiftUI
 struct TimerDisplayView: View {
     @ObservedObject var timer: PomodoroTimer
     @ObservedObject var accessibilityManager: AccessibilityManager
-    @ScaledMetric private var timerCircleSize: CGFloat = DesignTokens.Spacing.timerCircleSize
+    @Environment(\.deviceInfo) private var deviceInfo
     
     @Binding var previousProgress: Double
     @Binding var lastAnnouncedTime: Int
@@ -45,13 +45,14 @@ struct TimerDisplayView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            let size = min(geometry.size.width, geometry.size.height, timerCircleSize)
+            let optimalSize = deviceInfo.optimalTimerSize
+            let size = min(geometry.size.width, geometry.size.height, optimalSize)
             
             ZStack {
                 ProgressView(value: timer.progress, total: 1.0)
                     .progressViewStyle(NativeCircularProgressViewStyle(
                         tint: DesignTokens.TimerColors.color(isBreakTime: timer.isBreakTime, isRunning: timer.isRunning),
-                        lineWidth: 8
+                        lineWidth: max(6, size * 0.03) // Responsive line width
                     ))
                     .frame(width: size, height: size)
                     .animation(.easeInOut(duration: 0.8), value: timer.progress)
@@ -67,13 +68,13 @@ struct TimerDisplayView: View {
                     .accessibilityLabel(timerAccessibilityLabel)
                     .accessibilityValue(timerAccessibilityValue)
                     .accessibilityAddTraits(.updatesFrequently)
-                    .scaleEffect(min(size / timerCircleSize, 1.0))
+                    .scaleEffect(min(size / DesignTokens.Spacing.timerCircleSize, 1.0))
                     .animation(.easeInOut(duration: 0.2), value: timer.formattedTime)
             }
             .frame(width: size, height: size)
             .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
         }
-        .frame(height: timerCircleSize)
+        .frame(height: deviceInfo.optimalTimerSize)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("计时器显示")
         .accessibilityValue(timerAccessibilityLabel)

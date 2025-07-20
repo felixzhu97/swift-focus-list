@@ -9,11 +9,13 @@ struct TodoListView: View {
     
     var body: some View {
         NavigationView {
-            TodoContentView(
-                todoManager: todoManager,
-                editingTodo: $editingTodo,
-                accessibilityManager: accessibilityManager
-            )
+            ResponsiveTodoLayout {
+                TodoContentView(
+                    todoManager: todoManager,
+                    editingTodo: $editingTodo,
+                    accessibilityManager: accessibilityManager
+                )
+            }
             .navigationTitle("待办事项")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -188,9 +190,9 @@ private struct TodoSection: View {
             ForEach(todos) { todo in
                 TodoRowView(
                     todo: todo,
-                    onToggle: { [weak todoManager] in todoManager?.toggleTodo(todo) },
+                    onToggle: { todoManager.toggleTodo(todo) },
                     onEdit: { editingTodo = todo },
-                    onDelete: { [weak todoManager] in todoManager?.deleteTodo(todo) },
+                    onDelete: { todoManager.deleteTodo(todo) },
                     accessibilityManager: accessibilityManager
                 )
                 .swipeActions(edge: .leading) {

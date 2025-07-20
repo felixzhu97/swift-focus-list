@@ -60,7 +60,7 @@ struct PomodoroView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: sectionSpacing) {
+            ResponsiveTimerLayout {
                 // Session Information
                 SessionInfoView(timer: timer)
                 
@@ -80,9 +80,8 @@ struct PomodoroView: View {
                     buttonSpacing: buttonSpacing
                 )
                 
-                Spacer()
+                Spacer(minLength: 0)
             }
-            .padding(screenPadding)
             .navigationTitle("番茄钟")
         }
     }
