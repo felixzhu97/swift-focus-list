@@ -3,29 +3,35 @@ import SwiftUI
 struct TodoListView: View {
     @StateObject private var todoManager = TodoManager()
     @ObservedObject var accessibilityManager: AccessibilityManager
-    @State private var newTodoTitle = ""
-    @State private var selectedPriority: TodoItem.Priority = .medium
     @State private var editingTodo: TodoItem?
+    @State private var showingAddTodo = false
     @ScaledMetric private var screenPadding: CGFloat = DesignTokens.Spacing.screenMargin
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                AddTodoSection(
-                    newTodoTitle: $newTodoTitle,
-                    selectedPriority: $selectedPriority,
-                    onAddTodo: addTodo,
-                    accessibilityManager: accessibilityManager
-                )
-                .padding(screenPadding)
-                
-                TodoContentView(
+            TodoContentView(
+                todoManager: todoManager,
+                editingTodo: $editingTodo,
+                accessibilityManager: accessibilityManager
+            )
+            .navigationTitle("待办事项")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { showingAddTodo = true }) {
+                        Image(systemName: "plus")
+                            .font(.title2)
+                            .accessibilityLabel("添加新任务")
+                            .accessibilityHint("双击打开添加任务表单")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingAddTodo) {
+                AddTodoView(
                     todoManager: todoManager,
-                    editingTodo: $editingTodo,
-                    accessibilityManager: accessibilityManager
+                    accessibilityManager: accessibilityManager,
+                    isPresented: $showingAddTodo
                 )
             }
-            .navigationTitle("待办事项")
             .sheet(item: $editingTodo) { todo in
                 EditTodoView(
                     todo: todo,
@@ -39,49 +45,9 @@ struct TodoListView: View {
             }
         }
     }
-    
-    private func addTodo() {
-        todoManager.addTodo(newTodoTitle, priority: selectedPriority)
-        if !newTodoTitle.trimmingCharacters(in: .whitespaces).isEmpty {
-            newTodoTitle = ""
-            accessibilityManager.triggerHapticFeedback(for: .success)
-            accessibilityManager.announceStateChange("新任务已添加")
-        }
-    }
 }
 
 // MARK: - Supporting Views
-
-private struct AddTodoSection: View {
-    @Binding var newTodoTitle: String
-    @Binding var selectedPriority: TodoItem.Priority
-    let onAddTodo: () -> Void
-    let accessibilityManager: AccessibilityManager
-    
-    var body: some View {
-        HStack(spacing: DesignTokens.Spacing.small) {
-            TextField("添加新任务...", text: $newTodoTitle)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .font(DesignTokens.Typography.body)
-                .accessibilityLabel("新任务标题输入框")
-                .accessibilityHint("输入要添加的新任务标题")
-                .onSubmit {
-                    onAddTodo()
-                }
-            
-            Button(action: onAddTodo) {
-                Image(systemName: "plus.circle.fill")
-                    .font(DesignTokens.Typography.sectionTitle)
-                    .foregroundColor(DesignTokens.SystemColors.info)
-            }
-            .disabled(newTodoTitle.trimmingCharacters(in: .whitespaces).isEmpty)
-            .accessibilityLabel("添加新任务")
-            .accessibilityHint("双击添加输入的新任务到列表")
-            .frame(minWidth: accessibilityManager.minimumTouchTargetSize(), 
-                   minHeight: accessibilityManager.minimumTouchTargetSize())
-        }
-    }
-}
 
 private struct TodoContentView: View {
     @ObservedObject var todoManager: TodoManager
@@ -117,7 +83,7 @@ private struct EmptyStateView: View {
                     .font(DesignTokens.Typography.headline)
                     .foregroundColor(DesignTokens.TextColors.secondary)
                 
-                Text("在上方输入框中添加您的第一个任务，开始使用番茄工作法提高效率")
+                Text("点击右上角的加号按钮添加您的第一个任务，开始使用番茄工作法提高效率")
                     .font(DesignTokens.Typography.body)
                     .foregroundColor(DesignTokens.TextColors.secondary)
                     .multilineTextAlignment(.center)

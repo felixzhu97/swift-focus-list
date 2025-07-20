@@ -4,33 +4,22 @@ import SwiftUI
 import UIKit
 #endif
 
-struct EditTodoView: View {
-    let todo: TodoItem
+struct AddTodoView: View {
     let todoManager: TodoManager
     let accessibilityManager: AccessibilityManager
     @Binding var isPresented: Bool
     
-    @State private var title: String
-    @State private var priority: TodoItem.Priority
+    @State private var title: String = ""
+    @State private var priority: TodoItem.Priority = .medium
     @State private var titleValidationError: String?
-    @State private var hasChanges: Bool = false
     @FocusState private var isTitleFieldFocused: Bool
-    
-    init(todo: TodoItem, todoManager: TodoManager, accessibilityManager: AccessibilityManager, isPresented: Binding<Bool>) {
-        self.todo = todo
-        self.todoManager = todoManager
-        self.accessibilityManager = accessibilityManager
-        self._isPresented = isPresented
-        self._title = State(initialValue: todo.title)
-        self._priority = State(initialValue: todo.priority)
-    }
     
     private var isValidTitle: Bool {
         !title.trimmingCharacters(in: .whitespaces).isEmpty
     }
     
     private var canSave: Bool {
-        isValidTitle && titleValidationError == nil && hasChanges
+        isValidTitle && titleValidationError == nil
     }
     
     var body: some View {
@@ -41,12 +30,12 @@ struct EditTodoView: View {
                     Button("取消") {
                         handleCancel()
                     }
-                    .accessibilityLabel("取消编辑任务")
-                    .accessibilityHint("双击取消编辑并关闭界面")
+                    .accessibilityLabel("取消添加任务")
+                    .accessibilityHint("双击取消添加并关闭界面")
                     
                     Spacer()
                     
-                    Text("编辑任务")
+                    Text("添加任务")
                         .font(.headline)
                         .fontWeight(.semibold)
                     
@@ -63,27 +52,20 @@ struct EditTodoView: View {
                             button
                         }
                     }
-                    .accessibilityLabel("保存任务修改")
-                    .accessibilityHint("双击保存修改到任务")
+                    .accessibilityLabel("保存新任务")
+                    .accessibilityHint("双击保存新任务到列表")
                 }
                 .padding()
                 .background(DesignTokens.BackgroundColors.secondary)
                 
                 // Form Content
-                EditTodoForm(
+                TodoForm(
                     title: $title,
                     priority: $priority,
                     titleValidationError: $titleValidationError,
                     isTitleFieldFocused: $isTitleFieldFocused,
-                    originalTodo: todo,
                     accessibilityManager: accessibilityManager
                 )
-            }
-            .onChange(of: title) { _ in
-                updateHasChanges()
-            }
-            .onChange(of: priority) { _ in
-                updateHasChanges()
             }
             .onAppear {
                 // Focus the title field when the view appears
@@ -92,24 +74,20 @@ struct EditTodoView: View {
                 }
             }
         }
-        .interactiveDismissDisabled(hasChanges)
-        .accessibilityLabel("编辑任务表单")
-    }
-    
-    private func updateHasChanges() {
-        hasChanges = title != todo.title || priority != todo.priority
+        .interactiveDismissDisabled(!title.isEmpty)
+        .accessibilityLabel("添加新任务表单")
     }
     
     private func handleCancel() {
         accessibilityManager.triggerHapticFeedback(for: .buttonTap)
         
-        if hasChanges {
+        if !title.isEmpty {
             // For now, just dismiss - we can add confirmation dialog later
             isPresented = false
-            accessibilityManager.announceStateChange("已取消编辑")
+            accessibilityManager.announceStateChange("已取消添加任务")
         } else {
             isPresented = false
-            accessibilityManager.announceStateChange("已取消编辑")
+            accessibilityManager.announceStateChange("已取消添加任务")
         }
     }
     
@@ -124,9 +102,9 @@ struct EditTodoView: View {
         }
         
         accessibilityManager.triggerHapticFeedback(for: .success)
-        todoManager.updateTodo(todo, title: title, priority: priority)
+        todoManager.addTodo(title, priority: priority)
         isPresented = false
-        accessibilityManager.announceStateChange("任务已保存")
+        accessibilityManager.announceStateChange("新任务已添加")
     }
     
     private func validateTitle() {
@@ -144,19 +122,18 @@ struct EditTodoView: View {
 
 // MARK: - Supporting Views
 
-private struct EditTodoForm: View {
+private struct TodoForm: View {
     @Binding var title: String
     @Binding var priority: TodoItem.Priority
     @Binding var titleValidationError: String?
     var isTitleFieldFocused: FocusState<Bool>.Binding
-    let originalTodo: TodoItem
     let accessibilityManager: AccessibilityManager
     
     var body: some View {
         Form {
             titleSection
             prioritySection
-            infoSection
+            helpSection
         }
         .apply { form in
             if #available(iOS 16.0, macOS 13.0, *) {
@@ -176,7 +153,7 @@ private struct EditTodoForm: View {
                     .focused(isTitleFieldFocused)
                     .textFieldStyle(.plain)
                     .accessibilityLabel("任务标题输入框")
-                    .accessibilityHint("输入或修改任务的标题")
+                    .accessibilityHint("输入新任务的标题")
                     .accessibilityValue(title.isEmpty ? "空白" : title)
                     .onChange(of: title) { _ in
                         if titleValidationError != nil {
@@ -200,7 +177,7 @@ private struct EditTodoForm: View {
                 .accessibilityLabel("任务内容部分")
         } footer: {
             if titleValidationError == nil {
-                Text("修改任务的描述内容")
+                Text("输入您要完成的任务描述")
                     .font(DesignTokens.Typography.caption)
                     .foregroundColor(DesignTokens.TextColors.secondary)
             }
@@ -215,7 +192,7 @@ private struct EditTodoForm: View {
                 .font(DesignTokens.Typography.caption)
                 .accessibilityLabel("优先级设置部分")
         } footer: {
-            Text("修改任务的重要程度，高优先级任务将显示在列表顶部")
+            Text("选择任务的重要程度，高优先级任务将显示在列表顶部")
                 .font(DesignTokens.Typography.caption)
                 .foregroundColor(DesignTokens.TextColors.secondary)
         }
@@ -243,40 +220,23 @@ private struct EditTodoForm: View {
         }
     }
     
-    private var infoSection: some View {
+    private var helpSection: some View {
         Section {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
-                HStack {
-                    Text("任务状态")
-                        .font(DesignTokens.Typography.headline)
-                        .foregroundColor(DesignTokens.TextColors.primary)
-                    
-                    Spacer()
-                    
-                    HStack(spacing: DesignTokens.Spacing.small) {
-                        Image(systemName: originalTodo.isCompleted ? "checkmark.circle.fill" : "circle")
-                            .foregroundColor(originalTodo.isCompleted ? DesignTokens.SystemColors.success : DesignTokens.SystemColors.neutral)
-                        
-                        Text(originalTodo.isCompleted ? "已完成" : "待完成")
-                            .font(DesignTokens.Typography.body)
-                            .foregroundColor(DesignTokens.TextColors.secondary)
-                    }
-                }
+                Text("使用技巧")
+                    .font(DesignTokens.Typography.headline)
+                    .foregroundColor(DesignTokens.TextColors.primary)
                 
-                Text("创建时间：\(originalTodo.createdAt, formatter: dateFormatter)")
-                    .font(DesignTokens.Typography.caption)
-                    .foregroundColor(DesignTokens.TextColors.secondary)
-                
-                if originalTodo.ageInDays > 0 {
-                    Text("已创建 \(originalTodo.ageInDays) 天")
-                        .font(DesignTokens.Typography.caption)
-                        .foregroundColor(DesignTokens.TextColors.secondary)
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.small) {
+                    TipRow(icon: "timer", text: "使用番茄工作法专注完成任务")
+                    TipRow(icon: "checkmark.circle", text: "完成后左滑标记为已完成")
+                    TipRow(icon: "pencil", text: "右滑可以编辑或删除任务")
                 }
             }
         } header: {
-            Text("任务信息")
+            Text("帮助")
                 .font(DesignTokens.Typography.caption)
-                .accessibilityLabel("任务信息部分")
+                .accessibilityLabel("使用帮助部分")
         }
     }
     
@@ -291,14 +251,6 @@ private struct EditTodoForm: View {
             titleValidationError = nil
         }
     }
-    
-    private var dateFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        formatter.locale = Locale(identifier: "zh_CN")
-        return formatter
-    }
 }
 
 private struct PriorityIndicator: View {
@@ -309,6 +261,25 @@ private struct PriorityIndicator: View {
             .fill(priority.color)
             .frame(width: 12, height: 12)
             .accessibilityHidden(true)
+    }
+}
+
+private struct TipRow: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: DesignTokens.Spacing.small) {
+            Image(systemName: icon)
+                .font(DesignTokens.Typography.caption)
+                .foregroundColor(DesignTokens.SystemColors.info)
+                .frame(width: 16)
+            
+            Text(text)
+                .font(DesignTokens.Typography.caption)
+                .foregroundColor(DesignTokens.TextColors.secondary)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
