@@ -5,128 +5,25 @@ import Combine
 import UIKit
 #endif
 
-/// Centralized manager for accessibility features and system settings detection
+/// Centralized coordinator for accessibility features
 @MainActor
 class AccessibilityManager: ObservableObject {
     
-    // MARK: - Published Properties
+    // MARK: - Dependencies
     
-    /// Whether VoiceOver is currently enabled
-    @Published var isVoiceOverEnabled: Bool = false
-    
-    /// Whether Dynamic Type is enabled and current size category
-    @Published var contentSizeCategory: ContentSizeCategory = .medium
-    
-    /// Whether high contrast mode is enabled
-    @Published var isHighContrastEnabled: Bool = false
-    
-    /// Whether reduce motion is enabled
-    @Published var isReduceMotionEnabled: Bool = false
-    
-    /// Current accessibility configuration
-    @Published var accessibilityConfig: AccessibilityConfig
-    
-    // MARK: - Private Properties
-    
-    private var cancellables = Set<AnyCancellable>()
+    @Published private(set) var settingsManager = AccessibilitySettingsManager()
     private let hapticFeedback = HapticFeedbackManager()
+    private let labelProvider = AccessibilityLabelProvider.self
     
-    // MARK: - Initialization
+    // MARK: - Convenience Properties
     
-    init() {
-        // Initialize with current system settings
-        #if canImport(UIKit)
-        let voiceOverEnabled = UIAccessibility.isVoiceOverRunning
-        let sizeCategory = ContentSizeCategory(UIApplication.shared.preferredContentSizeCategory)
-        let highContrastEnabled = UIAccessibility.isDarkerSystemColorsEnabled || UIAccessibility.isInvertColorsEnabled
-        let reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
-        #else
-        // macOS fallbacks
-        let voiceOverEnabled = false
-        let sizeCategory = ContentSizeCategory.medium
-        let highContrastEnabled = false
-        let reduceMotionEnabled = false
-        #endif
-        
-        self.isVoiceOverEnabled = voiceOverEnabled
-        self.contentSizeCategory = sizeCategory
-        self.isHighContrastEnabled = highContrastEnabled
-        self.isReduceMotionEnabled = reduceMotionEnabled
-        
-        self.accessibilityConfig = AccessibilityConfig(
-            isVoiceOverEnabled: voiceOverEnabled,
-            isDynamicTypeEnabled: sizeCategory != .medium,
-            isHighContrastEnabled: highContrastEnabled,
-            preferredContentSizeCategory: sizeCategory
-        )
-        
-        setupAccessibilityObservers()
-    }
+    var isVoiceOverEnabled: Bool { settingsManager.isVoiceOverEnabled }
+    var contentSizeCategory: ContentSizeCategory { settingsManager.contentSizeCategory }
+    var isHighContrastEnabled: Bool { settingsManager.isHighContrastEnabled }
+    var isReduceMotionEnabled: Bool { settingsManager.isReduceMotionEnabled }
     
-    // MARK: - System Settings Detection
-    
-    /// Sets up observers for accessibility setting changes
-    private func setupAccessibilityObservers() {
-        #if canImport(UIKit)
-        // VoiceOver status changes
-        NotificationCenter.default.publisher(for: UIAccessibility.voiceOverStatusDidChangeNotification)
-            .sink { [weak self] _ in
-                self?.updateVoiceOverStatus()
-            }
-            .store(in: &cancellables)
-        
-        // Dynamic Type changes
-        NotificationCenter.default.publisher(for: UIContentSizeCategory.didChangeNotification)
-            .sink { [weak self] _ in
-                self?.updateContentSizeCategory()
-            }
-            .store(in: &cancellables)
-        
-        // High contrast changes
-        NotificationCenter.default.publisher(for: UIAccessibility.darkerSystemColorsStatusDidChangeNotification)
-            .sink { [weak self] _ in
-                self?.updateHighContrastStatus()
-            }
-            .store(in: &cancellables)
-        
-        // Reduce motion changes
-        NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)
-            .sink { [weak self] _ in
-                self?.updateReduceMotionStatus()
-            }
-            .store(in: &cancellables)
-        #endif
-    }
-    
-    private func updateVoiceOverStatus() {
-        #if canImport(UIKit)
-        isVoiceOverEnabled = UIAccessibility.isVoiceOverRunning
-        #endif
-        updateAccessibilityConfig()
-    }
-    
-    private func updateContentSizeCategory() {
-        #if canImport(UIKit)
-        contentSizeCategory = ContentSizeCategory(UIApplication.shared.preferredContentSizeCategory)
-        #endif
-        updateAccessibilityConfig()
-    }
-    
-    private func updateHighContrastStatus() {
-        #if canImport(UIKit)
-        isHighContrastEnabled = UIAccessibility.isDarkerSystemColorsEnabled || UIAccessibility.isInvertColorsEnabled
-        #endif
-        updateAccessibilityConfig()
-    }
-    
-    private func updateReduceMotionStatus() {
-        #if canImport(UIKit)
-        isReduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
-        #endif
-    }
-    
-    private func updateAccessibilityConfig() {
-        accessibilityConfig = AccessibilityConfig(
+    var accessibilityConfig: AccessibilityConfig {
+        AccessibilityConfig(
             isVoiceOverEnabled: isVoiceOverEnabled,
             isDynamicTypeEnabled: contentSizeCategory != .medium,
             isHighContrastEnabled: isHighContrastEnabled,
@@ -134,54 +31,21 @@ class AccessibilityManager: ObservableObject {
         )
     }
     
-    // MARK: - VoiceOver Label Management
+    // MARK: - Label Generation (Delegated)
     
-    /// Generates accessibility labels for timer states in Chinese
+    /// Generates accessibility labels for timer states
     func timerAccessibilityLabel(for state: TimerState, remainingTime: TimeInterval) -> String {
-        switch state {
-        case .idle:
-            return "计时器已停止"
-        case .working:
-            let minutes = Int(remainingTime) / 60
-            let seconds = Int(remainingTime) % 60
-            return "工作时间，剩余 \(minutes) 分 \(seconds) 秒"
-        case .onBreak:
-            let minutes = Int(remainingTime) / 60
-            let seconds = Int(remainingTime) % 60
-            return "休息时间，剩余 \(minutes) 分 \(seconds) 秒"
-        case .paused:
-            return "计时器已暂停"
-        }
+        labelProvider.timerLabel(for: state, remainingTime: remainingTime)
     }
     
-    /// Generates accessibility labels for todo items in Chinese
+    /// Generates accessibility labels for todo items
     func todoAccessibilityLabel(for item: TodoItem) -> String {
-        let priorityText = switch item.priority {
-        case .high: "高优先级"
-        case .medium: "中优先级"
-        case .low: "低优先级"
-        }
-        
-        let statusText = item.isCompleted ? "已完成" : "未完成"
-        return "\(priorityText)任务：\(item.title)，\(statusText)"
+        labelProvider.todoLabel(for: item)
     }
     
     /// Generates accessibility hint for interactive elements
     func accessibilityHint(for action: AccessibilityAction) -> String {
-        switch action {
-        case .startTimer:
-            return "双击开始计时器"
-        case .pauseTimer:
-            return "双击暂停计时器"
-        case .stopTimer:
-            return "双击停止计时器"
-        case .completeTodo:
-            return "双击标记任务完成"
-        case .editTodo:
-            return "双击编辑任务"
-        case .deleteTodo:
-            return "双击删除任务"
-        }
+        labelProvider.actionHint(for: action)
     }
     
     /// Posts accessibility announcements for important state changes
@@ -195,71 +59,28 @@ class AccessibilityManager: ObservableObject {
         #endif
     }
     
-    // MARK: - Dynamic Type Scaling Calculations
+    // MARK: - Dynamic Type Scaling (Delegated)
     
     /// Calculates scaled spacing based on Dynamic Type settings
     func scaledSpacing(baseSpacing: CGFloat) -> CGFloat {
-        let scaleFactor = dynamicTypeScaleFactor()
-        return baseSpacing * scaleFactor
+        DynamicTypeScalingService.scaledSpacing(baseSpacing: baseSpacing, contentSizeCategory: contentSizeCategory)
     }
     
     /// Calculates scaled font size for custom fonts
     func scaledFontSize(baseSize: CGFloat) -> CGFloat {
-        let scaleFactor = dynamicTypeScaleFactor()
-        return baseSize * scaleFactor
-    }
-    
-    /// Returns the scale factor based on current Dynamic Type setting
-    private func dynamicTypeScaleFactor() -> CGFloat {
-        switch contentSizeCategory {
-        case .extraSmall:
-            return 0.8
-        case .small:
-            return 0.9
-        case .medium:
-            return 1.0
-        case .large:
-            return 1.1
-        case .extraLarge:
-            return 1.2
-        case .extraExtraLarge:
-            return 1.3
-        case .extraExtraExtraLarge:
-            return 1.4
-        case .accessibilityMedium:
-            return 1.6
-        case .accessibilityLarge:
-            return 1.8
-        case .accessibilityExtraLarge:
-            return 2.0
-        case .accessibilityExtraExtraLarge:
-            return 2.2
-        case .accessibilityExtraExtraExtraLarge:
-            return 2.4
-        @unknown default:
-            return 1.0
-        }
+        DynamicTypeScalingService.scaledFontSize(baseSize: baseSize, contentSizeCategory: contentSizeCategory)
     }
     
     /// Calculates minimum touch target size based on accessibility guidelines
     func minimumTouchTargetSize() -> CGFloat {
-        // Apple recommends 44pt minimum, but increase for larger Dynamic Type
-        let baseSize: CGFloat = 44
-        let scaleFactor = dynamicTypeScaleFactor()
-        return max(baseSize, baseSize * scaleFactor)
+        DynamicTypeScalingService.minimumTouchTargetSize(contentSizeCategory: contentSizeCategory)
     }
     
     // MARK: - Enhanced Timer Display Support
     
     /// Returns a scaled monospaced font for timer display with proper Dynamic Type support
     func scaledTimerFont() -> Font {
-        let baseSize: CGFloat = 48
-        let scaledSize = scaledFontSize(baseSize: baseSize)
-        
-        // Ensure minimum readability while maintaining monospace alignment
-        let clampedSize = max(24, min(scaledSize, 72))
-        
-        return Font.system(size: clampedSize, weight: .bold, design: .monospaced)
+        DynamicTypeScalingService.scaledTimerFont(contentSizeCategory: contentSizeCategory)
     }
     
     /// Returns high contrast timer text color meeting WCAG AA standards
@@ -279,54 +100,40 @@ class AccessibilityManager: ObservableObject {
     
     /// Returns scaled kerning for monospaced timer display to improve digit alignment
     func scaledKerning() -> CGFloat {
-        let baseKerning: CGFloat = 0.5
-        let scaleFactor = dynamicTypeScaleFactor()
-        
-        // Scale kerning proportionally but keep it subtle
-        return baseKerning * min(scaleFactor, 1.5)
+        DynamicTypeScalingService.scaledKerning(contentSizeCategory: contentSizeCategory)
     }
     
     /// Announces time updates for VoiceOver users at appropriate intervals
     func announceTimeUpdateIfNeeded(timeRemaining: Int, isBreakTime: Bool, lastAnnouncedTime: inout Int) {
         guard isVoiceOverEnabled else { return }
         
-        let minutes = timeRemaining / 60
-        let seconds = timeRemaining % 60
-        let totalSeconds = timeRemaining
-        
-        // Announce at specific intervals to avoid overwhelming the user
-        let shouldAnnounce: Bool = {
-            // Announce every minute for the first 5 minutes
-            if totalSeconds <= 300 && totalSeconds % 60 == 0 && totalSeconds != lastAnnouncedTime {
-                return true
-            }
-            // Announce every 5 minutes for longer periods
-            if totalSeconds > 300 && totalSeconds % 300 == 0 && totalSeconds != lastAnnouncedTime {
-                return true
-            }
-            // Announce final countdown (last 10 seconds)
-            if totalSeconds <= 10 && totalSeconds != lastAnnouncedTime {
-                return true
-            }
-            return false
-        }()
-        
-        if shouldAnnounce {
-            let stateText = isBreakTime ? "休息时间" : "工作时间"
-            let timeText: String
-            
-            if totalSeconds <= 10 {
-                timeText = "\(totalSeconds) 秒"
-            } else if minutes > 0 {
-                timeText = seconds > 0 ? "\(minutes) 分 \(seconds) 秒" : "\(minutes) 分"
-            } else {
-                timeText = "\(seconds) 秒"
-            }
-            
-            let announcement = "\(stateText)剩余 \(timeText)"
+        if shouldAnnounceTime(timeRemaining: timeRemaining, lastAnnouncedTime: lastAnnouncedTime) {
+            let announcement = labelProvider.timeAnnouncement(timeRemaining: timeRemaining, isBreakTime: isBreakTime)
             announceStateChange(announcement)
             lastAnnouncedTime = timeRemaining
         }
+    }
+    
+    /// Determines if time should be announced based on interval rules
+    private func shouldAnnounceTime(timeRemaining: Int, lastAnnouncedTime: Int) -> Bool {
+        guard timeRemaining != lastAnnouncedTime else { return false }
+        
+        // Announce every minute for the first 5 minutes
+        if timeRemaining <= 300 && timeRemaining % 60 == 0 {
+            return true
+        }
+        
+        // Announce every 5 minutes for longer periods
+        if timeRemaining > 300 && timeRemaining % 300 == 0 {
+            return true
+        }
+        
+        // Announce final countdown (last 10 seconds)
+        if timeRemaining <= 10 {
+            return true
+        }
+        
+        return false
     }
     
     // MARK: - Haptic Feedback Coordination

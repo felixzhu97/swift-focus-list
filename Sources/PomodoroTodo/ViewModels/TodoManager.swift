@@ -57,33 +57,73 @@ class TodoManager: ObservableObject {
         loadTodos()
     }
     
+    // MARK: - Error Handling
+    
+    @Published var lastError: TodoError?
+    
     // MARK: - Public Methods
     
     func addTodo(_ title: String, priority: TodoItem.Priority = .medium) {
-        guard !title.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
+        guard !trimmedTitle.isEmpty else { 
+            lastError = .invalidInput("任务标题不能为空")
+            return 
+        }
         
-        let newTodo = TodoItem(title: title.trimmingCharacters(in: .whitespaces), priority: priority)
+        let newTodo = TodoItem(title: trimmedTitle, priority: priority)
+        guard newTodo.isValid else {
+            lastError = .invalidInput(newTodo.validationErrors.joined(separator: "，"))
+            return
+        }
+        
         todos.append(newTodo)
         saveTodos()
     }
     
     func toggleTodo(_ todo: TodoItem) {
-        guard let index = todos.firstIndex(where: { $0.id == todo.id }) else { return }
+        guard let index = todos.firstIndex(where: { $0.id == todo.id }) else { 
+            lastError = .invalidInput("找不到指定的任务")
+            return 
+        }
         todos[index].isCompleted.toggle()
         saveTodos()
     }
     
     func deleteTodo(_ todo: TodoItem) {
+        let originalCount = todos.count
         todos.removeAll { $0.id == todo.id }
+        
+        guard todos.count < originalCount else {
+            lastError = .invalidInput("找不到要删除的任务")
+            return
+        }
+        
         saveTodos()
     }
     
     func updateTodo(_ todo: TodoItem, title: String, priority: TodoItem.Priority) {
-        guard let index = todos.firstIndex(where: { $0.id == todo.id }),
-              !title.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        guard let index = todos.firstIndex(where: { $0.id == todo.id }) else {
+            lastError = .invalidInput("找不到要更新的任务")
+            return
+        }
         
-        todos[index].title = title.trimmingCharacters(in: .whitespaces)
-        todos[index].priority = priority
+        let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
+        guard !trimmedTitle.isEmpty else {
+            lastError = .invalidInput("任务标题不能为空")
+            return
+        }
+        
+        // Create a temporary todo for validation
+        var updatedTodo = todos[index]
+        updatedTodo.title = trimmedTitle
+        updatedTodo.priority = priority
+        
+        guard updatedTodo.isValid else {
+            lastError = .invalidInput(updatedTodo.validationErrors.joined(separator: "，"))
+            return
+        }
+        
+        todos[index] = updatedTodo
         saveTodos()
     }
     
@@ -110,22 +150,31 @@ class TodoManager: ObservableObject {
     // MARK: - Statistics
     
     var todoStats: TodoStats {
-        let active = todos.filter { !$0.isCompleted }
-        let completed = todos.filter(\.isCompleted)
+        // Use single pass for better performance with large lists
+        var activeCount = 0
+        var completedCount = 0
+        var highPriorityCount = 0
+        
+        for todo in todos {
+            if todo.isCompleted {
+                completedCount += 1
+            } else {
+                activeCount += 1
+                if todo.priority == .high {
+                    highPriorityCount += 1
+                }
+            }
+        }
         
         return TodoStats(
             total: todos.count,
-            active: active.count,
-            completed: completed.count,
-            highPriority: active.filter { $0.priority == .high }.count
+            active: activeCount,
+            completed: completedCount,
+            highPriority: highPriorityCount
         )
     }
     
     // MARK: - Private Methods
-    
-    // MARK: - Error Handling
-    
-    @Published var lastError: TodoError?
     
     private func saveTodos() {
         do {

@@ -1,6 +1,7 @@
 import SwiftUI
 import Foundation
 
+@MainActor
 class PomodoroTimer: ObservableObject {
     @Published var timeRemaining: Int = 25 * 60 // 25分钟
     @Published var isRunning = false
@@ -33,6 +34,11 @@ class PomodoroTimer: ObservableObject {
         timer = nil
     }
     
+    private func invalidateTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+    
     var formattedTime: String {
         let minutes = timeRemaining / 60
         let seconds = timeRemaining % 60
@@ -47,38 +53,43 @@ class PomodoroTimer: ObservableObject {
     }
     
     func startTimer() {
+        guard !isRunning else { return }
+        
         isRunning = true
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if self.timeRemaining > 0 {
-                self.timeRemaining -= 1
-            } else {
-                self.completeSession()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                await self?.tick()
             }
         }
     }
     
     func pauseTimer() {
         isRunning = false
-        timer?.invalidate()
-        timer = nil
+        invalidateTimer()
     }
     
     func resetTimer() {
         pauseTimer()
-        if isBreakTime {
-            timeRemaining = currentSession % 4 == 0 ? longBreakDuration : shortBreakDuration
+        timeRemaining = isBreakTime ? 
+            (currentSession % 4 == 0 ? longBreakDuration : shortBreakDuration) : 
+            workDuration
+    }
+    
+    private func tick() async {
+        guard isRunning else { return }
+        
+        if timeRemaining > 0 {
+            timeRemaining -= 1
         } else {
-            timeRemaining = workDuration
+            await completeSession()
         }
     }
     
-    private func completeSession() {
+    private func completeSession() async {
         pauseTimer()
         
-        // Trigger completion haptic feedback on main actor
-        Task { @MainActor in
-            accessibilityManager?.triggerHapticFeedback(for: .timerComplete)
-        }
+        // Trigger completion haptic feedback
+        accessibilityManager?.triggerHapticFeedback(for: .timerComplete)
         
         if isBreakTime {
             // 休息结束，开始工作
@@ -88,9 +99,7 @@ class PomodoroTimer: ObservableObject {
             
             // Announce break completion and new work session
             let sessionText = "休息结束，开始第 \(currentSession) 个工作番茄"
-            Task { @MainActor in
-                accessibilityManager?.announceStateChange(sessionText)
-            }
+            accessibilityManager?.announceStateChange(sessionText)
         } else {
             // 工作结束，开始休息
             isBreakTime = true
@@ -100,9 +109,7 @@ class PomodoroTimer: ObservableObject {
             // Announce work completion and break type
             let breakType = isLongBreak ? "长休息" : "短休息"
             let sessionText = "第 \(currentSession) 个工作番茄完成，开始 \(breakType)"
-            Task { @MainActor in
-                accessibilityManager?.announceStateChange(sessionText)
-            }
+            accessibilityManager?.announceStateChange(sessionText)
         }
     }
 }

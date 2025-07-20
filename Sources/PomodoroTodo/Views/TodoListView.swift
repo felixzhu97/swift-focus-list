@@ -198,10 +198,14 @@ private struct TodoList: View {
             list.listStyle(.sidebar)
             #endif
         }
-        .refreshable { @MainActor in
-            accessibilityManager.triggerHapticFeedback(for: .buttonTap)
+        .refreshable {
+            await MainActor.run {
+                accessibilityManager.triggerHapticFeedback(for: .buttonTap)
+            }
             try? await Task.sleep(nanoseconds: 500_000_000)
-            accessibilityManager.announceStateChange("列表已刷新")
+            await MainActor.run {
+                accessibilityManager.announceStateChange("列表已刷新")
+            }
         }
     }
 }

@@ -55,6 +55,7 @@ struct TodoRowView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(todoAccessibilityLabel)
         .accessibilityHint("使用完成按钮切换状态，或使用操作菜单进行更多操作")
+        .accessibilityAddTraits(todo.isCompleted ? [.isSelected] : [])
         .contextMenu {
             TodoContextMenu(
                 todo: todo,

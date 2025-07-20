@@ -1,6 +1,10 @@
 import SwiftUI
 import Foundation
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 // MARK: - View Extensions for Conditional Modifiers
 
 extension View {
@@ -59,11 +63,11 @@ extension View {
     ) -> some View {
         self
             .accessibilityLabel(label)
-            .if(hint != nil) { view in
-                view.accessibilityHint(hint!)
+            .ifLet(hint) { view, hintText in
+                view.accessibilityHint(hintText)
             }
-            .if(value != nil) { view in
-                view.accessibilityValue(value!)
+            .ifLet(value) { view, valueText in
+                view.accessibilityValue(valueText)
             }
             .if(!traits.isEmpty) { view in
                 view.accessibilityAddTraits(traits)
@@ -76,32 +80,78 @@ extension View {
     }
 }
 
+// MARK: - Layout Extensions
+
+extension View {
+    /// Applies platform-specific styling
+    @ViewBuilder
+    func platformSpecificStyle() -> some View {
+        #if os(iOS)
+        self
+        #elseif os(macOS)
+        self.buttonStyle(.bordered)
+        #else
+        self
+        #endif
+    }
+    
+    /// Applies consistent card styling across the app
+    func cardStyle(
+        backgroundColor: Color = ThemeManager.BackgroundColors.primary,
+        cornerRadius: CGFloat = 12,
+        shadowRadius: CGFloat = 2
+    ) -> some View {
+        self
+            .background(backgroundColor)
+            .cornerRadius(cornerRadius)
+            .shadow(color: .black.opacity(0.1), radius: shadowRadius, x: 0, y: 1)
+    }
+    
+    /// Applies responsive padding based on device size
+    func responsivePadding(_ edges: Edge.Set = .all) -> some View {
+        self.padding(edges, ThemeManager.Spacing.screenMargin)
+    }
+}
+
 // MARK: - Animation Extensions
 
 extension View {
-    /// Applies a spring animation with reduced motion support
-    func accessibleSpringAnimation(
-        response: Double = 0.5,
-        dampingFraction: Double = 0.8,
-        blendDuration: Double = 0
-    ) -> some View {
-        self.animation(
-            .spring(response: response, dampingFraction: dampingFraction, blendDuration: blendDuration),
-            value: UUID() // This should be replaced with actual state values in usage
-        )
-    }
-    
-    /// Applies animation only if reduce motion is not enabled
+    /// Applies animation with automatic reduced motion support
     @ViewBuilder
-    func animationIfNotReducedMotion<V: Equatable>(
-        _ animation: Animation?,
-        value: V,
-        isReduceMotionEnabled: Bool = false
+    func accessibleAnimation<V: Equatable>(
+        _ animation: Animation? = .spring(response: 0.5, dampingFraction: 0.8),
+        value: V
     ) -> some View {
-        if isReduceMotionEnabled {
+        #if os(iOS)
+        if UIAccessibility.isReduceMotionEnabled {
             self
         } else {
-            self.animation(animation, value: value)
+            if let animation = animation {
+                self.animation(animation, value: value)
+            } else {
+                self
+            }
         }
+        #else
+        if let animation = animation {
+            self.animation(animation, value: value)
+        } else {
+            self
+        }
+        #endif
+    }
+    
+    /// Modern transition-based animation with automatic accessibility support
+    @ViewBuilder
+    func accessibleTransition(_ transition: AnyTransition = .opacity) -> some View {
+        #if os(iOS)
+        if UIAccessibility.isReduceMotionEnabled {
+            self
+        } else {
+            self.transition(transition)
+        }
+        #else
+        self.transition(transition)
+        #endif
     }
 }
