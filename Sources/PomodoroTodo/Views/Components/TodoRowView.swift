@@ -67,6 +67,7 @@ struct TodoRowView: View {
         }
     }
     
+    @MainActor
     private func handleToggle() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
             isAnimatingCompletion = true

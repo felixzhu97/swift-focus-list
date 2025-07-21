@@ -98,6 +98,7 @@ struct EditTodoView: View {
         hasChanges = title != todo.title || priority != todo.priority
     }
     
+    @MainActor
     private func handleCancel() {
         accessibilityManager.triggerHapticFeedback(for: .buttonTap)
         
@@ -111,6 +112,7 @@ struct EditTodoView: View {
         }
     }
     
+    @MainActor
     private func handleSave() {
         // Validate input
         validateTitle()
@@ -223,8 +225,10 @@ private struct EditTodoForm: View {
         .accessibilityHint("选择任务的优先级：高、中或低")
         .accessibilityValue("当前选择：\(priority.rawValue)")
         .onChange(of: priority) { newPriority in
-            accessibilityManager.triggerHapticFeedback(for: .buttonTap)
-            accessibilityManager.announceStateChange("优先级已设置为\(newPriority.rawValue)")
+            Task { @MainActor in
+                accessibilityManager.triggerHapticFeedback(for: .buttonTap)
+                accessibilityManager.announceStateChange("优先级已设置为\(newPriority.rawValue)")
+            }
         }
     }
     
