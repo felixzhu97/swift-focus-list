@@ -78,15 +78,15 @@ struct EditTodoView: View {
                 accessibilityManager: accessibilityManager
             )
         }
-        .onChange(of: title) { _ in
+        .onChange(of: title) { (newValue: String) in
             updateHasChanges()
         }
-        .onChange(of: priority) { _ in
+        .onChange(of: priority) { (newValue: TodoItem.Priority) in
             updateHasChanges()
         }
         .onAppear {
             // Focus the title field when the view appears
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isTitleFieldFocused = true
             }
         }
@@ -98,6 +98,7 @@ struct EditTodoView: View {
         hasChanges = title != todo.title || priority != todo.priority
     }
     
+    @MainActor
     private func handleCancel() {
         accessibilityManager.triggerHapticFeedback(for: .buttonTap)
         
@@ -111,6 +112,7 @@ struct EditTodoView: View {
         }
     }
     
+    @MainActor
     private func handleSave() {
         // Validate input
         validateTitle()
@@ -151,12 +153,14 @@ private struct EditTodoForm: View {
     let accessibilityManager: AccessibilityManager
     
     var body: some View {
-        VStack(spacing: DesignTokens.Spacing.large) {
-            titleSection
-            prioritySection
-            infoSection
+        ScrollView {
+            VStack(spacing: DesignTokens.Spacing.large) {
+                titleSection
+                prioritySection
+                infoSection
+            }
+            .padding()
         }
-        .padding()
     }
     
     private var titleSection: some View {
@@ -220,9 +224,11 @@ private struct EditTodoForm: View {
         .accessibilityLabel("任务优先级选择器")
         .accessibilityHint("选择任务的优先级：高、中或低")
         .accessibilityValue("当前选择：\(priority.rawValue)")
-        .onChange(of: priority) { _ in
-            accessibilityManager.triggerHapticFeedback(for: .buttonTap)
-            accessibilityManager.announceStateChange("优先级已设置为\(priority.rawValue)")
+        .onChange(of: priority) { newPriority in
+            Task { @MainActor in
+                accessibilityManager.triggerHapticFeedback(for: .buttonTap)
+                accessibilityManager.announceStateChange("优先级已设置为\(newPriority.rawValue)")
+            }
         }
     }
     

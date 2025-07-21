@@ -57,6 +57,7 @@ struct TodoSection: View {
     
     // MARK: - Action Handlers
     
+    @MainActor
     private func handleToggleAction(for todo: TodoItem) {
         accessibilityManager.triggerHapticFeedback(for: .todoComplete)
         todoManager.toggleTodo(todo)
@@ -64,12 +65,14 @@ struct TodoSection: View {
         accessibilityManager.announceStateChange(message)
     }
     
+    @MainActor
     private func handleDeleteAction(for todo: TodoItem) {
         accessibilityManager.triggerHapticFeedback(for: .error)
         todoManager.deleteTodo(todo)
         accessibilityManager.announceStateChange("任务已删除")
     }
     
+    @MainActor
     private func handleEditAction(for todo: TodoItem) {
         editingTodo = todo
         accessibilityManager.announceStateChange("打开编辑界面")
